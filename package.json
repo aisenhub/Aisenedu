@@ -7,6 +7,9 @@
     "dev": "pnpm --filter @aisenedu/web dev",
     "build": "pnpm --filter @aisenedu/web build",
     "lint": "pnpm --filter @aisenedu/web lint",
+    "test": "pnpm --filter @aisenedu/web test",
+    "test:coverage": "pnpm --filter @aisenedu/web test:coverage",
+    "test:e2e": "pnpm --filter @aisenedu/web test:e2e",
     "preview": "pnpm --filter @aisenedu/web preview"
   }
 }

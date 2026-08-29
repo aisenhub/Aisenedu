@@ -44,6 +44,18 @@
 
 ## 已使用的参考
 
+## 2026-08-29｜姓名贴 MVP 工具实现与测试边界
+
+- GitHub 搜索关键词：`React printable labels mm A4 browser app name tags`、`SheetJS xlsx React browser import CSV labels`、`react-to-print React 19 printing documents`
+- 搜索范围/方向：浏览器端标签排版、React 打印 iframe 生命周期、CSV/XLSX 导入边界、可访问表单与本地处理。
+- 参考项目：`MatthewHerbst/react-to-print`、`SheetJS/sheetjs`、`UgnisSoftware/react-spreadsheet-import`、`dreambulka/Label-Generator-App`、`u8array/ZPLab`
+- 参考链接：https://github.com/MatthewHerbst/react-to-print；https://github.com/SheetJS/sheetjs；https://github.com/UgnisSoftware/react-spreadsheet-import；https://github.com/dreambulka/Label-Generator-App；https://github.com/u8array/ZPLab
+- 许可证：`react-to-print` 为 MIT；SheetJS CE `xlsx` 采用 Apache-2.0；其余项目本阶段只参考 README、产品边界和交互方向，未复制代码或资源，若后续需要复用代码必须单独核实其当前许可证与 NOTICE。
+- 查看内容：`react-to-print` README/API/React 19 兼容说明；SheetJS 浏览器读取方向；导入组件的列匹配流程；本地标签生成器的 CSV/毫米尺寸边界；标签设计器的尺寸与浏览器编辑思路。
+- 可复用结论：打印应使用独立内容 ref 和动态打印样式；导入应在服务层做受限解析、列选择和一次性提交；标签尺寸使用 mm；首页与工具编辑器保持路由和依赖边界。
+- Aisenedu 采用方案：保持 React + Tailwind + shadcn/ui，先完成纯布局和可测的导入清洗，再动态加载 `xlsx` 与 `react-to-print`；采用内存数据、浏览器打印和真实尺寸 DOM 预览。
+- 不采用内容及取舍理由：不复制第三方画布、条码、云端存储、静默打印或 PDF 方案；MVP 只服务教师批量姓名贴，并保留学生姓名不出浏览器的隐私边界。
+
 ## 2026-08-29｜首页与姓名贴工具入口设计
 
 - GitHub 搜索关键词：`label printing web app React printable labels`、`name tag generator printable web`、`React Avery labels`
