@@ -27,8 +27,16 @@ test('姓名贴工作台支持文本名单和 CSV 列选择', async ({ page }) =
   await expect(page.getByRole('combobox', { name: '姓名列' })).toBeVisible()
   await page.getByRole('combobox', { name: '姓名列' }).click()
   await page.getByRole('option', { name: '姓名' }).click()
-  await page.getByRole('button', { name: '确认姓名列' }).click()
+  await page.getByRole('combobox', { name: '班级列' }).click()
+  await page.getByRole('option', { name: '班级', exact: true }).click()
+  await page.getByRole('button', { name: '确认字段选择' }).click()
   await expect(page.getByLabel('当前工作台状态').getByText('1 人')).toBeVisible()
+  const firstLabel = page.locator('.label-text').first()
+  await expect(firstLabel.locator('span')).toHaveText(['班级：三年级', '姓名：李明远'])
+  await expect(firstLabel.locator('br')).toHaveCount(1)
+  await page.getByRole('checkbox', { name: '显示“班级”标题' }).uncheck()
+  await page.getByRole('checkbox', { name: '显示“姓名”标题' }).uncheck()
+  await expect(firstLabel.locator('span')).toHaveText(['三年级', '李明远'])
 })
 
 test('姓名贴工作台在窄屏没有无意横向滚动', async ({ page }) => {

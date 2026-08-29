@@ -20,7 +20,7 @@ export function NameListPreview({ cleaning, names }: NameListPreviewProps) {
       {names.length === 0 ? <p className="mt-3 text-sm text-text-muted">导入后会在这里显示清洗结果。</p> : (
         <>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2" aria-label="姓名预览">
-            {visibleNames.map((name) => <li className="flex min-h-10 items-center justify-between gap-2 rounded-lg bg-surface-raised px-3 text-sm text-text" key={name.id}><span className="min-w-0 truncate">{name.value}</span>{name.duplicateCount > 1 ? <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-text-muted"><Copy aria-hidden="true" className="size-3" />重复 {name.duplicateCount}</span> : null}</li>)}
+            {visibleNames.map((name) => <li className="flex min-h-10 items-center justify-between gap-2 rounded-lg bg-surface-raised px-3 text-sm text-text" key={name.id}><span className="flex min-w-0 items-baseline gap-2 truncate"><span className="truncate font-medium">{name.value}</span>{name.className ? <span className="truncate text-xs text-text-muted">{name.className}</span> : null}</span>{name.duplicateCount > 1 ? <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-text-muted"><Copy aria-hidden="true" className="size-3" />重复 {name.duplicateCount}</span> : null}</li>)}
           </ul>
           {names.length > visibleNames.length ? <p className="mt-3 text-xs text-text-muted">仅展示前 50 条，打印将包含全部 {names.length} 人。</p> : null}
         </>

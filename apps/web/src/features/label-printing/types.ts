@@ -8,6 +8,7 @@ export function asMm(value: number): Mm {
 export type StudentName = Readonly<{
   id: string
   value: string
+  className?: string
   sourceRow: number
   duplicateCount: number
 }>
@@ -65,6 +66,8 @@ export type LabelAppearance = Readonly<{
   borderRadiusMm: Mm
   paddingMm: Mm
   allowWrap: boolean
+  showClassTitle: boolean
+  showNameTitle: boolean
 }>
 
 export type LabelProjectDraft = Readonly<{
@@ -155,6 +158,12 @@ export type NameCleaningResult = Readonly<{
   removedEmptyCount: number
   duplicateValues: readonly string[]
   tooLongRows: readonly number[]
+}>
+
+export type ImportNameValue = Readonly<{
+  value: string
+  className?: string
+  sourceRow: number
 }>
 
 export type LabelPrintFormState = Readonly<{

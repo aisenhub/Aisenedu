@@ -26,6 +26,10 @@ export function LabelPageCanvas({ appearance, maxLines, page, screenMode = false
         if (cell.kind === 'empty') {
           return <div aria-hidden="true" className={screenMode ? 'label-cell label-cell-empty' : 'label-cell label-cell-empty print-empty-cell'} key={cell.id} style={cellStyle} />
         }
+        const labelParts = [
+          cell.student?.className ? `${appearance.showClassTitle ? '班级：' : ''}${cell.student.className}` : '',
+          cell.student ? `${appearance.showNameTitle ? '姓名：' : ''}${cell.student.value}` : '',
+        ].filter(Boolean)
         return (
           <div
             className="label-cell label-cell-filled"
@@ -62,7 +66,12 @@ export function LabelPageCanvas({ appearance, maxLines, page, screenMode = false
                 whiteSpace: appearance.allowWrap ? 'normal' : 'nowrap',
               }}
             >
-              {cell.student?.value}
+              {labelParts.map((part, index) => (
+                <span key={`${cell.id}-${part}`}>
+                  {index > 0 ? <br /> : null}
+                  {part}
+                </span>
+              ))}
             </span>
           </div>
         )

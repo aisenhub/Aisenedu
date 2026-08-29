@@ -76,7 +76,7 @@ export function LabelPrintingWorkspace() {
       <header className="flex flex-col justify-between gap-5 border-b border-border pb-6 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-text sm:text-4xl">学生姓名贴</h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-text-muted">从一列学生姓名开始，在浏览器内完成排版、真实尺寸预览和 A4 打印。姓名不会写入 URL、存储或网络请求。</p>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-text-muted">导入学生姓名，也可以同时带上班级，在浏览器内完成排版、真实尺寸预览和 A4 打印。学生信息不会写入 URL、存储或网络请求。</p>
         </div>
         <div className="flex items-center gap-3 text-sm text-text-muted" aria-label="当前工作台状态"><span className="inline-flex items-center gap-1.5 rounded-full bg-surface-raised px-3 py-2"><UsersRound aria-hidden="true" className="size-4" />{draft.names.length} 人</span><span className="rounded-full bg-surface-raised px-3 py-2">{pages.length} 页</span></div>
       </header>

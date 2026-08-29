@@ -1,4 +1,4 @@
-import type { ImportErrorCode, NameCleaningResult, ParsedTable, ParsedTableRow, TableImportResult, StudentName } from '../types'
+import type { ImportErrorCode, ImportNameValue, NameCleaningResult, ParsedTable, ParsedTableRow, TableImportResult, StudentName } from '../types'
 
 export const IMPORT_LIMITS = {
   maxFileBytes: 5 * 1024 * 1024,
@@ -128,20 +128,21 @@ function cleanValue(value: string) {
   return normalizeCell(value).trim()
 }
 
-export function cleanNameValues(values: readonly { value: string; sourceRow: number }[]): NameCleaningResult {
+export function cleanNameValues(values: readonly ImportNameValue[]): NameCleaningResult {
   const removedEmptyCount = values.reduce((count, item) => count + (cleanValue(item.value) === '' ? 1 : 0), 0)
   const tooLongRows = values
-    .filter((item) => [...cleanValue(item.value)].length > IMPORT_LIMITS.maxNameCharacters)
+    .filter((item) => [...cleanValue(item.value)].length > IMPORT_LIMITS.maxNameCharacters || [...cleanValue(item.className ?? '')].length > IMPORT_LIMITS.maxNameCharacters)
     .map((item) => item.sourceRow)
   const cleanItems = values
-    .map((item) => ({ ...item, value: cleanValue(item.value) }))
-    .filter((item) => item.value !== '' && [...item.value].length <= IMPORT_LIMITS.maxNameCharacters)
+    .map((item) => ({ ...item, value: cleanValue(item.value), className: cleanValue(item.className ?? '') || undefined }))
+    .filter((item) => item.value !== '' && [...item.value].length <= IMPORT_LIMITS.maxNameCharacters && [...(item.className ?? '')].length <= IMPORT_LIMITS.maxNameCharacters)
   const counts = new Map<string, number>()
   for (const item of cleanItems) counts.set(item.value, (counts.get(item.value) ?? 0) + 1)
   const duplicateValues = [...counts.entries()].filter(([, count]) => count > 1).map(([value]) => value)
   const names: StudentName[] = cleanItems.map((item, index) => ({
     id: `name-${item.sourceRow}-${index}`,
     value: item.value,
+    ...(item.className ? { className: item.className } : {}),
     sourceRow: item.sourceRow,
     duplicateCount: counts.get(item.value) ?? 1,
   }))
@@ -152,6 +153,10 @@ export function cleanNamesFromText(text: string): NameCleaningResult {
   return cleanNameValues(text.replace(/^\uFEFF/, '').split(/\r?\n/).map((value, index) => ({ value, sourceRow: index + 1 })))
 }
 
-export function cleanNamesFromTable(table: ParsedTable, columnIndex: number): NameCleaningResult {
-  return cleanNameValues(table.rows.map((row) => ({ value: row.values[columnIndex] ?? '', sourceRow: row.sourceRow })))
+export function cleanNamesFromTable(table: ParsedTable, nameColumnIndex: number, classColumnIndex?: number): NameCleaningResult {
+  return cleanNameValues(table.rows.map((row) => ({
+    value: row.values[nameColumnIndex] ?? '',
+    ...(classColumnIndex !== undefined && classColumnIndex !== nameColumnIndex ? { className: row.values[classColumnIndex] ?? '' } : {}),
+    sourceRow: row.sourceRow,
+  })))
 }

@@ -20,7 +20,7 @@ export function useLabelImport() {
       return false
     }
     if (result.tooLongRows.length > 0) {
-      setError(`第 ${result.tooLongRows.length} 行姓名超过 ${80} 个字符，请修改后重试。`)
+      setError(`第 ${result.tooLongRows.length} 行的姓名或班级超过 ${80} 个字符，请修改后重试。`)
       setStatus('error')
       return false
     }
@@ -52,13 +52,13 @@ export function useLabelImport() {
     return true
   }, [])
 
-  const selectColumn = useCallback((columnIndex: number) => {
-    if (!table || columnIndex < 0 || columnIndex >= table.columns.length) {
+  const selectColumn = useCallback((nameColumnIndex: number, classColumnIndex?: number) => {
+    if (!table || nameColumnIndex < 0 || nameColumnIndex >= table.columns.length || (classColumnIndex !== undefined && (classColumnIndex < 0 || classColumnIndex >= table.columns.length || classColumnIndex === nameColumnIndex))) {
       setStatus('error')
-      setError('请选择一个有效的姓名列后重试。')
+      setError('请选择有效的姓名列和班级列后重试；班级列可以不选择。')
       return false
     }
-    return applyCleaning(cleanNamesFromTable(table, columnIndex))
+    return applyCleaning(cleanNamesFromTable(table, nameColumnIndex, classColumnIndex))
   }, [applyCleaning, table])
 
   const cancelTable = useCallback(() => {

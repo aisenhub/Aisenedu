@@ -48,7 +48,7 @@ describe('姓名导入与清洗', () => {
   })
 
   it('表格姓名列使用数据源行号清洗', () => {
-    const result = cleanNamesFromTable({ columns: ['姓名'], rows: [{ sourceRow: 2, values: [' 陈安然 '] }] }, 0)
-    expect(result.names[0]).toMatchObject({ value: '陈安然', sourceRow: 2 })
+    const result = cleanNamesFromTable({ columns: ['班级', '姓名'], rows: [{ sourceRow: 2, values: [' 一班 ', ' 陈安然 '] }] }, 1, 0)
+    expect(result.names[0]).toMatchObject({ className: '一班', value: '陈安然', sourceRow: 2 })
   })
 })

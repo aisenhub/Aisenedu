@@ -44,6 +44,18 @@
 
 ## 已使用的参考
 
+## 2026-08-29｜姓名贴班级与姓名双字段导入
+
+- GitHub 搜索关键词：`React printable labels multiple fields name class`、`React CSV column mapping multiple fields`、`React spreadsheet import optional fields`
+- 搜索范围/方向：多字段 CSV/XLSX 映射、可选字段、预览确认、浏览器本地导入和标签中多字段排版。
+- 参考项目：`UgnisSoftware/react-spreadsheet-import`、`importcsv/importcsv`、`beamworks/react-csv-importer`、`evertsd/react-avery`
+- 参考链接：https://github.com/UgnisSoftware/react-spreadsheet-import；https://github.com/importcsv/importcsv；https://github.com/beamworks/react-csv-importer；https://github.com/evertsd/react-avery
+- 许可证：`react-spreadsheet-import` 为 MIT；`importcsv/importcsv` 的前端为 MIT、后端和管理端为 AGPL-3.0；`react-csv-importer` 本次只参考公开 README 流程，不复制代码；`react-avery` 本次只参考打印预览与表单/纸张分栏方向，不复制代码。
+- 查看内容：字段 schema、列自动匹配与手动映射、可选字段、用户确认后提交、浏览器本地解析、真实比例打印预览和左表单/右纸张布局。
+- 可复用结论：导入流程应将原始表格列映射到明确的业务字段；姓名作为必选字段，班级作为可选字段；用户确认映射后再一次性更新内存名单；预览和打印共享同一个字段渲染模型。
+- Aisenedu 采用方案：扩展 `StudentName` 为可选 `className`，导入面板提供姓名列和班级列选择，班级标题/姓名标题由内容面板分别控制；继续使用现有本地 File API、内存 store、mm 布局和 DOM 打印。
+- 不采用内容及取舍理由：不引入完整导入 UI 依赖，避免 Chakra/额外 CSS 与现有 shadcn/ui 冲突；不使用后端/AI 映射，避免学生信息离开浏览器；不把班级扩展为云端班级管理或持久化数据。
+
 ## 2026-08-29｜姓名贴 MVP 工具实现与测试边界
 
 - GitHub 搜索关键词：`React printable labels mm A4 browser app name tags`、`SheetJS xlsx React browser import CSV labels`、`react-to-print React 19 printing documents`

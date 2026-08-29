@@ -82,6 +82,8 @@ export const DEFAULT_APPEARANCE: LabelAppearance = {
   borderRadiusMm: asMm(1.5),
   paddingMm: asMm(3),
   allowWrap: true,
+  showClassTitle: true,
+  showNameTitle: true,
 }
 
 export function getTemplatePreset(templateId: string): LabelTemplatePreset {
