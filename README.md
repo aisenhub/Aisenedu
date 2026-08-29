@@ -46,6 +46,9 @@ corepack pnpm install
 corepack pnpm dev
 corepack pnpm build
 corepack pnpm lint
+corepack pnpm test
+corepack pnpm test:coverage
+corepack pnpm test:e2e
 ```
 
 需要连接 Supabase 时，将 `apps/web/.env.example` 复制为 `apps/web/.env.local` 并填写公开配置。敏感密钥不得进入前端代码或 Git。
@@ -59,6 +62,18 @@ corepack pnpm lint
 5. 重要的产品和技术决策同步记录到 `docs/`。
 6. 新项目、功能或模块开发前，先搜索 GitHub 并将结果记录到 `reference/REFERENCE_PROJECT_INDEX.md`。
 7. 首页只加载应用壳和轻量工具目录；具体工具及重型依赖必须按需加载。
+
+## 首个工具：学生姓名贴
+
+- 路由：`/tools/name-labels`
+- 导入：多行文本、UTF-8 CSV、XLSX 第一个工作表
+- 上限：文件 5MB、数据行 10,000、列 100、单个姓名 80 个 Unicode 字符
+- 数据边界：姓名只保留在当前页面内存，不写入 URL、`localStorage`、`sessionStorage`、日志或网络请求
+- 打印：浏览器打印与校准页；通用模板均需用户自行实物校准，不承诺特定厂商标签纸精度
+
+XLSX 解析使用 `xlsx@0.18.5`（SheetJS CE，Apache-2.0），仅在用户选择 XLSX 文件后动态加载；浏览器打印使用 `react-to-print@3.3.0`（MIT）。最近一次生产构建中，XLSX 独立 chunk 约 429.53 kB（gzip 约 143.08 kB），不会进入首页首屏 chunk。
+
+Chrome 与 Edge 已完成页面加载、空状态、文本/CSV 导入和无横向滚动检查；浏览器系统打印对话框及真实打印机硬件无法由自动化环境可靠控制，正式使用仍需在目标浏览器/打印机上确认 100% 缩放、关闭“适合页面”、纸张进纸和 X/Y 校准。
 
 ## 文档
 

@@ -1,7 +1,8 @@
-import { lazy, Suspense } from 'react'
+import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
 import { LoaderCircle } from 'lucide-react'
 import { Toaster } from 'sonner'
+import { Button } from '../components/ui/button'
 import { TooltipProvider } from '../components/ui/tooltip'
 import { HOME_ROUTE, NAME_LABELS_ROUTE } from './routes'
 
@@ -20,10 +21,44 @@ function PageLoading() {
   )
 }
 
+interface RouteErrorBoundaryProps {
+  children: ReactNode
+}
+
+interface RouteErrorBoundaryState {
+  hasError: boolean
+}
+
+class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, RouteErrorBoundaryState> {
+  state: RouteErrorBoundaryState = { hasError: false }
+
+  static getDerivedStateFromError(): RouteErrorBoundaryState {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    // Keep lazy-chunk errors out of product logs; the user can retry without exposing details.
+    void error
+    void info
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children
+
+    return (
+      <section aria-labelledby="route-error-title" className="mx-auto flex min-h-[50vh] max-w-xl flex-col items-center justify-center px-6 py-16 text-center">
+        <h1 className="text-2xl font-semibold text-text" id="route-error-title">工具暂时无法打开</h1>
+        <p className="mt-3 text-sm leading-6 text-text-muted">页面资源没有加载完成。请检查网络后重试，当前名单不会被上传。</p>
+        <Button className="mt-6" onClick={() => window.location.reload()}>重新加载</Button>
+      </section>
+    )
+  }
+}
+
 export default function App() {
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="app-shell min-h-screen bg-slate-50 text-slate-900">
         <a
           className="sr-only z-50 rounded-md bg-blue-700 px-4 py-3 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-none focus:ring-4 focus:ring-blue-200"
           href="#main-content"
@@ -44,13 +79,15 @@ export default function App() {
           </div>
         </header>
         <main id="main-content" tabIndex={-1}>
-          <Suspense fallback={<PageLoading />}>
-            <Routes>
-              <Route element={<HomePage />} path={HOME_ROUTE} />
-              <Route element={<NameLabelPrintingPage />} path={NAME_LABELS_ROUTE} />
-              <Route element={<NotFoundPage />} path="*" />
-            </Routes>
-          </Suspense>
+          <RouteErrorBoundary>
+            <Suspense fallback={<PageLoading />}>
+              <Routes>
+                <Route element={<HomePage />} path={HOME_ROUTE} />
+                <Route element={<NameLabelPrintingPage />} path={NAME_LABELS_ROUTE} />
+                <Route element={<NotFoundPage />} path="*" />
+              </Routes>
+            </Suspense>
+          </RouteErrorBoundary>
         </main>
         <footer className="border-t border-slate-200 bg-white">
           <div className="mx-auto max-w-7xl px-5 py-6 text-sm text-slate-500 sm:px-8">

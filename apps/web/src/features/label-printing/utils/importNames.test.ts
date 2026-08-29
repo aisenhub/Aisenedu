@@ -36,6 +36,17 @@ describe('姓名导入与清洗', () => {
     expect(oversizedResult).toMatchObject({ ok: false, code: 'file-too-large' })
   })
 
+  it('按需加载 XLSX 并读取第一个工作表', async () => {
+    const xlsx = await import('xlsx')
+    const workbook = xlsx.utils.book_new()
+    const sheet = xlsx.utils.aoa_to_sheet([['姓名', '班级'], ['林小满', '一班']])
+    xlsx.utils.book_append_sheet(workbook, sheet, '名单')
+    const bytes = xlsx.write(workbook, { bookType: 'xlsx', type: 'array' })
+    const result = await parseTableFile(new File([bytes], '名单.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.table.rows[0].values).toEqual(['林小满', '一班'])
+  })
+
   it('表格姓名列使用数据源行号清洗', () => {
     const result = cleanNamesFromTable({ columns: ['姓名'], rows: [{ sourceRow: 2, values: [' 陈安然 '] }] }, 0)
     expect(result.names[0]).toMatchObject({ value: '陈安然', sourceRow: 2 })

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { asMm, type LabelAppearance, type LabelLayout, type LabelProjectDraft, type PaperSettings, type StudentName } from '../types'
+import { asMm, type FieldErrors, type LabelAppearance, type LabelLayout, type LabelProjectDraft, type PaperSettings, type StudentName } from '../types'
 import { createDefaultDraft, DEFAULT_TEMPLATE_ID, getTemplatePreset } from '../utils/templatePresets'
 
 type PrintStatus = 'idle' | 'printing' | 'error'
@@ -10,6 +10,7 @@ type LabelPrintingState = {
   previewScale: number
   printStatus: PrintStatus
   printError: string | null
+  formErrors: FieldErrors
   setNames: (names: readonly StudentName[]) => void
   selectTemplate: (templateId: string) => void
   restoreSelectedTemplateDefaults: () => void
@@ -18,6 +19,7 @@ type LabelPrintingState = {
   updateAppearance: (appearance: Partial<LabelAppearance>) => void
   setPreviewScale: (scale: number) => void
   setPrintStatus: (status: PrintStatus, error?: string | null) => void
+  setFormErrors: (errors: FieldErrors) => void
   resetDraft: () => void
 }
 
@@ -43,6 +45,7 @@ export const useLabelPrintingStore = create<LabelPrintingState>((set) => ({
   previewScale: 0.72,
   printStatus: 'idle',
   printError: null,
+  formErrors: {},
   setNames: (names) => set((state) => ({ draft: { ...state.draft, names: [...names] } })),
   selectTemplate: (templateId) => set((state) => {
     const template = getTemplatePreset(templateId)
@@ -83,7 +86,8 @@ export const useLabelPrintingStore = create<LabelPrintingState>((set) => ({
   updateAppearance: (appearance) => set((state) => ({ draft: { ...state.draft, appearance: { ...state.draft.appearance, ...appearance } } })),
   setPreviewScale: (scale) => set({ previewScale: Math.min(1.2, Math.max(0.45, scale)) }),
   setPrintStatus: (status, error = null) => set({ printStatus: status, printError: error ?? null }),
-  resetDraft: () => set({ selectedTemplateId: DEFAULT_TEMPLATE_ID, draft: cloneDraft(initialDraft), previewScale: 0.72, printStatus: 'idle', printError: null }),
+  setFormErrors: (errors) => set({ formErrors: { ...errors } }),
+  resetDraft: () => set({ selectedTemplateId: DEFAULT_TEMPLATE_ID, draft: cloneDraft(initialDraft), previewScale: 0.72, printStatus: 'idle', printError: null, formErrors: {} }),
 }))
 
 export function getFreshLabelPrintingState() {

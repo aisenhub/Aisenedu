@@ -35,11 +35,18 @@ export function useLabelPrintingDraft() {
   const selectedTemplateId = useLabelPrintingStore((state) => state.selectedTemplateId)
   const updatePaper = useLabelPrintingStore((state) => state.updatePaper)
   const updateLayout = useLabelPrintingStore((state) => state.updateLayout)
+  const setFormErrors = useLabelPrintingStore((state) => state.setFormErrors)
   const [form, setForm] = useState<LabelPrintFormState>(() => createFormState(draft))
 
   useEffect(() => {
     setForm(createFormState(useLabelPrintingStore.getState().draft))
-  }, [selectedTemplateId])
+    setFormErrors({})
+  }, [selectedTemplateId, setFormErrors])
+
+  const updateErrors = useCallback((errors: FieldErrors) => {
+    setForm((current) => ({ ...current, errors }))
+    setFormErrors(errors)
+  }, [setFormErrors])
 
   const setNumberField = useCallback((field: LayoutField, rawValue: string) => {
     setForm((current) => ({
@@ -49,22 +56,22 @@ export function useLabelPrintingDraft() {
     }))
 
     if (rawValue.trim() === '') {
-      setForm((current) => ({ ...current, errors: { ...current.errors, [field]: '请输入有效数字' } }))
+      updateErrors({ ...form.errors, [field]: '请输入有效数字' })
       return
     }
     const value = Number(rawValue)
     if (!Number.isFinite(value)) {
-      setForm((current) => ({ ...current, errors: { ...current.errors, [field]: '请输入有效数字' } }))
+      updateErrors({ ...form.errors, [field]: '请输入有效数字' })
       return
     }
 
     const result = validateLayout(updateCandidate(draft, field, value))
-    setForm((current) => ({ ...current, errors: result.errors }))
+    updateErrors(result.errors)
     if (!result.valid) return
 
     if (field.startsWith('paper.')) updatePaper({ [field.slice(6)]: value } as Parameters<typeof updatePaper>[0])
     else updateLayout({ [field.slice(7)]: value } as Parameters<typeof updateLayout>[0])
-  }, [draft, updateLayout, updatePaper])
+  }, [draft, form.errors, updateErrors, updateLayout, updatePaper])
 
   const resetFormFromDraft = useCallback(() => setForm(createFormState(useLabelPrintingStore.getState().draft)), [])
   const setFieldError = useCallback((field: LayoutField, message: string | undefined) => {
@@ -72,9 +79,10 @@ export function useLabelPrintingDraft() {
       const errors: FieldErrors = { ...current.errors }
       if (message) errors[field] = message
       else delete errors[field]
+      setFormErrors(errors)
       return { ...current, errors }
     })
-  }, [])
+  }, [setFormErrors])
 
   const fieldState = useMemo(() => ({
     value: (field: LayoutField) => form.values[field],

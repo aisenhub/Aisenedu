@@ -14,6 +14,11 @@ export function useLabelImport() {
 
   const applyCleaning = useCallback((result: NameCleaningResult) => {
     setCleaning(result)
+    if (result.names.length === 0) {
+      setError('没有识别到可用姓名，请输入姓名或选择包含姓名的列后重试。')
+      setStatus('error')
+      return false
+    }
     if (result.tooLongRows.length > 0) {
       setError(`第 ${result.tooLongRows.length} 行姓名超过 ${80} 个字符，请修改后重试。`)
       setStatus('error')

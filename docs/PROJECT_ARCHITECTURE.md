@@ -185,3 +185,16 @@ corepack pnpm lint
 ```
 
 当引入 Supabase 迁移、Edge Function 或具体业务模块时，再增加对应的数据库、服务端和端到端验证，不把未配置的外部服务伪装成已验证。
+
+## 13. 首个工具的加载、依赖与隐私记录
+
+当前首个工具为 `/tools/name-labels` 学生姓名贴，页面通过路由级 `React.lazy` 加载。首页只加载应用壳、导航和轻量工具入口；姓名贴页面进入后才加载其 feature chunk。用户选择 XLSX 文件后才动态加载 `xlsx@0.18.5`，生产构建中该独立 chunk 约 429.53 kB（gzip 约 143.08 kB）。打印功能使用 `react-to-print@3.3.0`，只接收专用可打印文档 ref，不引入 jsPDF。
+
+姓名、原始文件名和表格内容只在当前页面内存中处理；当前实现没有持久化 middleware、网络上传、分析事件、日志输出或 URL 编码。导入服务在读取前检查 5MB 文件上限，并限制 10,000 行、100 列和 80 个 Unicode 字符的姓名长度。XLSX 解析失败、格式不支持、超限和列选择取消均保留原有草稿。
+
+UI 遵循 `components/ui/` 中的 shadcn/ui 按需组件和语义 token；姓名贴页面为浅色工作区，桌面端采用左配置/右预览，窄屏纵向排列。空状态、加载态、错误摘要、字段内联错误、确认对话框、撤销 Toast、响应式和懒加载失败重试均有实现或自动化覆盖。
+
+### 当前验证边界
+
+- 已验证：`corepack pnpm build`、`corepack pnpm lint`、`corepack pnpm test`、`corepack pnpm test:coverage`、`corepack pnpm test:e2e`；Chrome 与 Edge 的页面加载和基本流程；375/768/1024/1440px 无意横向滚动检查；打印样式字符串和校准文档的单元测试。
+- 未由自动化环境完成：系统打印对话框内的真实纸张驱动选项、实体打印机进纸与毫米偏差；因此通用模板均标记为“未实物验证”，交付说明不宣称厂商纸型精度。

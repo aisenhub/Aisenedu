@@ -24,6 +24,19 @@ function normalizeCell(value: string) {
   return value.replace(/\u00A0/g, ' ').replace(INVISIBLE_CHARS, '').normalize('NFC')
 }
 
+function readFileArrayBuffer(file: File): Promise<ArrayBuffer> {
+  if (typeof file.arrayBuffer === 'function') return file.arrayBuffer()
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.addEventListener('load', () => {
+      if (reader.result instanceof ArrayBuffer) resolve(reader.result)
+      else reject(new Error('文件内容不是二进制数据'))
+    })
+    reader.addEventListener('error', () => reject(reader.error ?? new Error('文件读取失败')))
+    reader.readAsArrayBuffer(file)
+  })
+}
+
 function buildTable(rows: readonly (readonly string[])[]): TableImportResult {
   if (rows.length === 0 || rows.every((row) => row.every((cell) => normalizeCell(cell) === ''))) return failure('empty-file', '文件中没有可读取的表格内容，请检查文件后重试。')
   if (rows.length - 1 > IMPORT_LIMITS.maxRows) return failure('too-many-rows', `文件最多支持 ${IMPORT_LIMITS.maxRows.toLocaleString()} 行数据，请拆分文件后重试。`)
@@ -82,11 +95,12 @@ export function parseCsvText(text: string): TableImportResult {
 async function parseXlsxFile(file: File): Promise<TableImportResult> {
   try {
     const workbookModule = await import('xlsx')
-    const workbook = workbookModule.read(await file.arrayBuffer(), { type: 'array', cellDates: false })
+    const xlsx = workbookModule.default ?? workbookModule
+    const workbook = xlsx.read(await readFileArrayBuffer(file), { type: 'array', cellDates: false })
     const firstSheetName = workbook.SheetNames[0]
     if (!firstSheetName) return failure('empty-file', 'XLSX 中没有可读取的工作表，请检查文件后重试。')
     const sheet = workbook.Sheets[firstSheetName]
-    const rows = workbookModule.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' })
+    const rows = xlsx.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' })
     return buildTable(rows.map((row) => row.map(toCellText)))
   } catch {
     return failure('workbook-read-failed', 'XLSX 文件无法读取，请确认文件未损坏后重试。')
@@ -100,7 +114,7 @@ export async function parseTableFile(file: File): Promise<TableImportResult> {
 
   if (fileName.endsWith('.csv')) {
     try {
-      const text = new TextDecoder('utf-8', { fatal: true }).decode(await file.arrayBuffer()).replace(/^\uFEFF/, '')
+      const text = new TextDecoder('utf-8', { fatal: true }).decode(await readFileArrayBuffer(file)).replace(/^\uFEFF/, '')
       return parseCsvText(text)
     } catch {
       return failure('invalid-utf8', 'CSV 不是有效的 UTF-8 编码，请另存为 UTF-8 CSV 后重试。')

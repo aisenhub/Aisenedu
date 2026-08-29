@@ -39,6 +39,13 @@ describe('姓名贴布局算法', () => {
     expect(pages[0].cells[0].yMm).toBe(asMm(9))
   })
 
+  it('1000 个姓名按页生成且不改变分页规则', () => {
+    const pages = createPageLayouts(names(1000), paper, layout)
+
+    expect(pages).toHaveLength(Math.ceil(1000 / 24))
+    expect(pages.flatMap((page) => page.cells.filter((cell) => cell.kind === 'label'))).toHaveLength(1000)
+  })
+
   it('拒绝不可容纳的网格和非法起始格', () => {
     expect(validateLayout({ paper, layout: { ...layout, labelWidthMm: asMm(70) } }).valid).toBe(false)
     expect(validateLayout({ paper, layout: { ...layout, firstLabelIndex: 24 } }).valid).toBe(false)
