@@ -1,0 +1,12 @@
+{
+  "name": "aisenedu",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "dev": "pnpm --filter @aisenedu/web dev",
+    "build": "pnpm --filter @aisenedu/web build",
+    "lint": "pnpm --filter @aisenedu/web lint",
+    "preview": "pnpm --filter @aisenedu/web preview"
+  }
+}
