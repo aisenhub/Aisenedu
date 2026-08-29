@@ -33,15 +33,7 @@ export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelP
         const borderBackground = appearance.borderMode === 'randomGradient'
           ? getDeterministicGradient(appearance.gradientPalette, appearance.gradientSeed, cell.id)
           : appearance.borderColor
-        const backgroundImage = appearance.backgroundMode === 'image' && appearance.backgroundImage
-          ? `linear-gradient(${getMaskColor(appearance.backgroundImage.maskTone, appearance.backgroundImage.maskOpacity)}, ${getMaskColor(appearance.backgroundImage.maskTone, appearance.backgroundImage.maskOpacity)}), url(${appearance.backgroundImage.objectUrl})`
-          : undefined
-        const backgroundSize = appearance.backgroundMode === 'image' && appearance.backgroundImage
-          ? `${Math.max(100, appearance.backgroundImage.scale * 100)}% auto`
-          : undefined
-        const backgroundPosition = appearance.backgroundMode === 'image' && appearance.backgroundImage
-          ? `calc(50% + ${appearance.backgroundImage.offsetX}%), calc(50% + ${appearance.backgroundImage.offsetY}%)`
-          : undefined
+        const background = appearance.backgroundMode === 'image' ? appearance.backgroundImage : undefined
         return (
           <div
             className="label-cell label-cell-filled"
@@ -61,9 +53,6 @@ export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelP
               style={{
                 alignItems: 'center',
                 backgroundColor: appearance.backgroundMode === 'solid' ? appearance.backgroundColor : undefined,
-                backgroundImage,
-                backgroundPosition,
-                backgroundSize,
                 borderRadius: `${Math.max(0, appearance.borderRadiusMm - appearance.borderWidthMm)}mm`,
                 color: appearance.textColor,
                 display: 'flex',
@@ -76,10 +65,13 @@ export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelP
                 minWidth: 0,
                 overflow: 'hidden',
                 padding: `${appearance.paddingMm}mm`,
+                position: 'relative',
                 textAlign: appearance.textAlign,
               }}
             >
-              <span className="label-text" style={{ display: 'block', maxWidth: '100%', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {background ? <img alt="" aria-hidden="true" src={background.objectUrl} style={{ height: 'auto', left: `calc(50% + ${background.offsetX}%)`, maxWidth: 'none', pointerEvents: 'none', position: 'absolute', top: `calc(50% + ${background.offsetY}%)`, transform: 'translate(-50%, -50%)', width: `${Math.max(100, background.scale * 100)}%` }} /> : null}
+              {background && background.maskOpacity > 0 ? <div aria-hidden="true" style={{ backgroundColor: getMaskColor(background.maskTone, background.maskOpacity), inset: 0, pointerEvents: 'none', position: 'absolute' }} /> : null}
+              <span className="label-text" style={{ display: 'block', maxWidth: '100%', minWidth: 0, overflow: 'hidden', position: 'relative', textOverflow: 'ellipsis', whiteSpace: 'nowrap', zIndex: 1 }}>
                 {labelParts.map((part, index) => <span className="block truncate" key={`${cell.id}-${part}`} title={part}>{index > 0 ? <br /> : null}{part}</span>)}
               </span>
             </div>

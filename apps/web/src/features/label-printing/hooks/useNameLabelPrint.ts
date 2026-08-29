@@ -2,7 +2,7 @@ import { useCallback, type RefObject } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
 import type { PaperSettings } from '../types'
-import { createPrintPageStyle } from '../services/labelPrintService'
+import { createPrintPageStyle, waitForPrintableImages } from '../services/labelPrintService'
 
 type NameLabelPrintOptions = Readonly<{
   contentRef: RefObject<HTMLDivElement | null>
@@ -17,7 +17,7 @@ export function useNameLabelPrint({ canPrint, contentRef, documentTitle, paper }
     contentRef,
     documentTitle,
     onAfterPrint: () => setPrintStatus('idle'),
-    onBeforePrint: async () => { setPrintStatus('printing') },
+    onBeforePrint: async () => { await waitForPrintableImages(contentRef.current); setPrintStatus('printing') },
     onPrintError: (_location, error) => setPrintStatus('error', error instanceof Error ? '打印未能启动，请检查浏览器打印权限后重试。' : '打印未能启动，请重试。'),
     pageStyle: createPrintPageStyle(paper),
     printIframeProps: { referrerPolicy: 'no-referrer' },

@@ -34,6 +34,9 @@ export function LabelPrintingWorkspace() {
   const printError = useLabelPrintingStore((state) => state.printError)
   const formErrors = useLabelPrintingStore((state) => state.formErrors)
   const setNames = useLabelPrintingStore((state) => state.setNames)
+  const setBackgroundImage = useLabelPrintingStore((state) => state.setBackgroundImage)
+  const updateAppearance = useLabelPrintingStore((state) => state.updateAppearance)
+  const selectTemplate = useLabelPrintingStore((state) => state.selectTemplate)
   const setPreviewScale = useLabelPrintingStore((state) => state.setPreviewScale)
   const setPrintStatus = useLabelPrintingStore((state) => state.setPrintStatus)
   const template = getTemplatePreset(selectedTemplateId)
@@ -48,6 +51,7 @@ export function LabelPrintingWorkspace() {
   const [showValidationAlert, setShowValidationAlert] = useState(false)
   const [clearOpen, setClearOpen] = useState(false)
   const [activeStep, setActiveStep] = useState<LabelWorkflowStep>(1)
+  const [hasLabelOverflow, setHasLabelOverflow] = useState(false)
   const hadNamesRef = useRef(draft.names.length > 0)
 
   const labelPrinter = useNameLabelPrint({ canPrint: canPrintLabels, contentRef: labelPrintRef, documentTitle: 'Aisenedu_学生姓名贴', paper: draft.paper })
@@ -67,6 +71,12 @@ export function LabelPrintingWorkspace() {
     if (objectUrl && typeof URL !== 'undefined') URL.revokeObjectURL(objectUrl)
   }, [])
 
+  useEffect(() => {
+    const fields = document.querySelectorAll('[data-label-preview] .label-text > span')
+    const next = Array.from(fields).some((field) => field.clientWidth > 0 && field.scrollWidth > field.clientWidth + 1)
+    setHasLabelOverflow((current) => current === next ? current : next)
+  }, [draft.appearance, pages])
+
   const validationEntries = Object.entries(effectiveErrors).filter(([, message]) => Boolean(message)) as [LayoutField, string][]
   const handleLabelPrint = () => {
     if (!canPrintLabels) {
@@ -81,6 +91,7 @@ export function LabelPrintingWorkspace() {
   const handleClearNames = () => {
     const previousNames = [...draft.names]
     setNames([])
+    setBackgroundImage(undefined)
     setClearOpen(false)
     toast('名单已清空', { action: { label: '撤销', onClick: () => setNames(previousNames) }, duration: 4000 })
   }
@@ -115,13 +126,14 @@ export function LabelPrintingWorkspace() {
         <div className="min-w-0 space-y-4 lg:sticky lg:top-6">
           <section aria-labelledby="print-action-heading" className="rounded-2xl border border-primary/25 bg-primary/5 p-5 shadow-sm"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold text-primary">{template.name}</p><h2 className="mt-1 text-lg font-semibold text-text" id="print-action-heading">准备好后打印姓名贴</h2><p className="mt-1 text-sm text-text-muted">{draft.names.length > 0 ? `${draft.names.length} 人 · ${pages.length} 页` : '导入名单后会显示页数和预览'}</p></div><Button disabled={!canPrintLabels || printStatus === 'printing'} onClick={handleLabelPrint} size="lg"><Printer aria-hidden="true" className="size-5" />{printStatus === 'printing' ? '正在准备打印…' : '打印姓名贴'}</Button></div><ul aria-label="打印前检查" className="mt-4 grid gap-1 text-sm text-text-muted sm:grid-cols-2"><li>{draft.names.length > 0 ? `名单：${draft.names.length} 人` : '名单：待导入'}</li><li>纸张：{template.paper.size} · {template.paper.orientation === 'portrait' ? '纵向' : '横向'}</li><li>页面：{pages.length} 页</li><li>{validation.valid && Object.keys(formErrors).length === 0 ? '排版参数：已通过检查' : '排版参数：待修复'}</li></ul>{!canPrintLabels ? <p className="mt-3 text-sm leading-6 text-error" role="status">{draft.names.length === 0 ? '请先进入“导入名单”添加姓名。' : '请进入标记为待处理的步骤，修正参数后再打印。'}</p> : null}{printError ? <div className="mt-4 flex items-start gap-2 rounded-lg border border-error/25 bg-error/5 px-3 py-2 text-sm leading-6 text-error" role="alert"><AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />{printError}<button className="ml-auto cursor-pointer font-semibold underline underline-offset-2" onClick={() => setPrintStatus('idle')} type="button">关闭</button></div> : null}<div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-primary/20 pt-4"><p className="text-xs leading-5 text-text-muted">打印对话框请选择 100% 缩放，并按需开启背景图形。</p><Button disabled={draft.names.length === 0} onClick={() => setClearOpen(true)} size="sm" variant="danger"><ClipboardX aria-hidden="true" className="size-4" />清空名单</Button></div></section>
           <PrintPreview appearance={draft.appearance} onScaleChange={setPreviewScale} pages={pages} scale={previewScale} />
+          {hasLabelOverflow ? <section aria-labelledby="overflow-warning-title" className="rounded-xl border border-error/30 bg-error/5 p-4 text-sm leading-6 text-error"><h2 className="font-semibold" id="overflow-warning-title">部分字段可能在标签内被截断</h2><p className="mt-1">可减小字号、关闭字段标题，或选择更宽的标签模板后重试。</p><div className="mt-3 flex flex-wrap gap-2"><Button onClick={() => setActiveStep(3)} size="sm" type="button" variant="secondary">减小字号</Button><Button onClick={() => updateAppearance({ showClassTitle: false, showNameTitle: false })} size="sm" type="button" variant="secondary">关闭字段标题</Button><Button onClick={() => { selectTemplate('a4-2x8-2-lines'); setActiveStep(2) }} size="sm" type="button" variant="secondary">使用更宽模板</Button></div></section> : null}
           <div className="rounded-xl border border-border bg-surface-raised p-4 text-sm leading-6 text-text-muted"><p className="font-semibold text-text">下一步怎么做</p><p className="mt-1">如果第一次使用这类标签纸，建议先打开左侧“校准与打印说明”，打印校准页确认 X / Y 偏移，再打印正式姓名贴。</p><a className="mt-3 inline-flex items-center gap-1 font-semibold text-primary underline-offset-2 hover:underline" href="#calibration-heading">查看校准说明 <ArrowRight aria-hidden="true" className="size-4" /></a></div>
           <div aria-hidden="true" ref={labelPrintRef}>{canPrintLabels ? <PrintableLabelDocument appearance={draft.appearance} pages={pages} /> : null}</div>
           <div aria-hidden="true" ref={calibrationPrintRef}>{canPrintCalibration ? <PrintableCalibrationDocument layout={draft.layout} paper={draft.paper} /> : null}</div>
         </div>
       </div>
 
-      <Dialog onOpenChange={setClearOpen} open={clearOpen}><DialogContent><DialogTitle>清空当前名单？</DialogTitle><DialogDescription>这会移除当前页面内存中的所有姓名，纸张和样式设置会保留。清空后可以在短时间内撤销。</DialogDescription><div className="mt-6 flex justify-end gap-3"><Button onClick={() => setClearOpen(false)} variant="secondary">取消</Button><Button onClick={handleClearNames} variant="danger"><ClipboardX aria-hidden="true" className="size-4" />清空名单</Button></div></DialogContent></Dialog>
+      <Dialog onOpenChange={setClearOpen} open={clearOpen}><DialogContent><DialogTitle>清空当前名单？</DialogTitle><DialogDescription>这会移除当前页面内存中的所有姓名，并释放本次会话的背景图片资源；纸张和其他样式设置会保留。清空后可以在短时间内撤销姓名名单。</DialogDescription><div className="mt-6 flex justify-end gap-3"><Button onClick={() => setClearOpen(false)} variant="secondary">取消</Button><Button onClick={handleClearNames} variant="danger"><ClipboardX aria-hidden="true" className="size-4" />清空名单</Button></div></DialogContent></Dialog>
       </div>
     </LabelPrintingDraftProvider>
   )

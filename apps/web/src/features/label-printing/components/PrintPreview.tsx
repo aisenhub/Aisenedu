@@ -64,7 +64,7 @@ export function PrintPreview({ appearance, onScaleChange, pages, scale }: PrintP
   const scaledHeight = Number(page.heightMm) * scale
 
   return (
-    <section aria-labelledby="preview-heading" className="min-w-0 rounded-2xl border border-border bg-surface-muted p-4 sm:p-6">
+      <section aria-labelledby="preview-heading" className="min-w-0 rounded-2xl border border-border bg-surface-muted p-4 sm:p-6" data-label-preview>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-text" id="preview-heading">打印预览</h2>
