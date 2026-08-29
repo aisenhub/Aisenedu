@@ -1,14 +1,14 @@
 import type { CSSProperties } from 'react'
-import type { LabelAppearance, PageLayout } from '../types'
+import { LABEL_FONT_FAMILIES, type LabelAppearance, type PageLayout } from '../types'
+import { getDeterministicGradient, getMaskColor } from '../utils/appearance'
 
 type LabelPageCanvasProps = Readonly<{
   page: PageLayout
   appearance: LabelAppearance
-  maxLines: 1 | 2 | 3 | 4
   screenMode?: boolean
 }>
 
-export function LabelPageCanvas({ appearance, maxLines, page, screenMode = false }: LabelPageCanvasProps) {
+export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelPageCanvasProps) {
   return (
     <div
       aria-label={`第 ${page.pageIndex + 1} 页，${page.cells.filter((cell) => cell.kind === 'label').length} 个姓名贴`}
@@ -30,6 +30,18 @@ export function LabelPageCanvas({ appearance, maxLines, page, screenMode = false
           cell.student?.className ? `${appearance.showClassTitle ? '班级：' : ''}${cell.student.className}` : '',
           cell.student ? `${appearance.showNameTitle ? '姓名：' : ''}${cell.student.value}` : '',
         ].filter(Boolean)
+        const borderBackground = appearance.borderMode === 'randomGradient'
+          ? getDeterministicGradient(appearance.gradientPalette, appearance.gradientSeed, cell.id)
+          : appearance.borderColor
+        const backgroundImage = appearance.backgroundMode === 'image' && appearance.backgroundImage
+          ? `linear-gradient(${getMaskColor(appearance.backgroundImage.maskTone, appearance.backgroundImage.maskOpacity)}, ${getMaskColor(appearance.backgroundImage.maskTone, appearance.backgroundImage.maskOpacity)}), url(${appearance.backgroundImage.objectUrl})`
+          : undefined
+        const backgroundSize = appearance.backgroundMode === 'image' && appearance.backgroundImage
+          ? `${Math.max(100, appearance.backgroundImage.scale * 100)}% auto`
+          : undefined
+        const backgroundPosition = appearance.backgroundMode === 'image' && appearance.backgroundImage
+          ? `calc(50% + ${appearance.backgroundImage.offsetX}%), calc(50% + ${appearance.backgroundImage.offsetY}%)`
+          : undefined
         return (
           <div
             className="label-cell label-cell-filled"
@@ -37,42 +49,40 @@ export function LabelPageCanvas({ appearance, maxLines, page, screenMode = false
             style={{
               ...cellStyle,
               alignItems: 'center',
-              backgroundColor: appearance.backgroundColor,
-              borderColor: appearance.borderColor,
+              background: borderBackground,
               borderRadius: `${appearance.borderRadiusMm}mm`,
-              borderStyle: 'solid',
-              borderWidth: `${appearance.borderWidthMm}mm`,
-              color: appearance.textColor,
+              boxSizing: 'border-box',
               display: 'flex',
-              fontFamily: appearance.fontFamily,
-              fontSize: `${appearance.fontSizePt}pt`,
-              fontWeight: appearance.fontWeight,
-              justifyContent: appearance.textAlign === 'left' ? 'flex-start' : appearance.textAlign === 'right' ? 'flex-end' : 'center',
-              lineHeight: 1.25,
               overflow: 'hidden',
-              padding: `${appearance.paddingMm}mm`,
-              textAlign: appearance.textAlign,
+              padding: `${appearance.borderWidthMm}mm`,
             }}
           >
-            <span
-              className="label-text"
+            <div
               style={{
-                display: appearance.allowWrap ? '-webkit-box' : 'block',
-                maxWidth: '100%',
+                alignItems: 'center',
+                backgroundColor: appearance.backgroundMode === 'solid' ? appearance.backgroundColor : undefined,
+                backgroundImage,
+                backgroundPosition,
+                backgroundSize,
+                borderRadius: `${Math.max(0, appearance.borderRadiusMm - appearance.borderWidthMm)}mm`,
+                color: appearance.textColor,
+                display: 'flex',
+                flex: 1,
+                fontFamily: LABEL_FONT_FAMILIES[appearance.fontPreset],
+                fontSize: `${appearance.fontSizePt}pt`,
+                fontWeight: appearance.fontWeight,
+                justifyContent: appearance.textAlign === 'left' ? 'flex-start' : appearance.textAlign === 'right' ? 'flex-end' : 'center',
+                lineHeight: 1.25,
+                minWidth: 0,
                 overflow: 'hidden',
-                overflowWrap: 'anywhere',
-                WebkitBoxOrient: appearance.allowWrap ? 'vertical' : undefined,
-                WebkitLineClamp: appearance.allowWrap ? maxLines : undefined,
-                whiteSpace: appearance.allowWrap ? 'normal' : 'nowrap',
+                padding: `${appearance.paddingMm}mm`,
+                textAlign: appearance.textAlign,
               }}
             >
-              {labelParts.map((part, index) => (
-                <span key={`${cell.id}-${part}`}>
-                  {index > 0 ? <br /> : null}
-                  {part}
-                </span>
-              ))}
-            </span>
+              <span className="label-text" style={{ display: 'block', maxWidth: '100%', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {labelParts.map((part, index) => <span className="block truncate" key={`${cell.id}-${part}`} title={part}>{index > 0 ? <br /> : null}{part}</span>)}
+              </span>
+            </div>
           </div>
         )
       })}

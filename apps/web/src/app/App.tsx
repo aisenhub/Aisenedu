@@ -1,5 +1,5 @@
-import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from 'react'
-import { Link, Route, Routes } from 'react-router-dom'
+import { Component, lazy, Suspense, useEffect, useRef, type ErrorInfo, type ReactNode } from 'react'
+import { Link, Route, Routes, useLocation } from 'react-router-dom'
 import { LoaderCircle } from 'lucide-react'
 import { Toaster } from 'sonner'
 import { Button } from '../components/ui/button'
@@ -37,7 +37,7 @@ class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, RouteErrorBo
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // Keep lazy-chunk errors out of product logs; the user can retry without exposing details.
+    // Keep lazy-chunk and route errors out of product logs; the user can retry without exposing details.
     void error
     void info
   }
@@ -56,6 +56,13 @@ class RouteErrorBoundary extends Component<RouteErrorBoundaryProps, RouteErrorBo
 }
 
 export default function App() {
+  const location = useLocation()
+  const mainRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    mainRef.current?.focus()
+  }, [location.pathname])
+
   return (
     <TooltipProvider>
       <div className="app-shell min-h-screen bg-slate-50 text-slate-900">
@@ -71,14 +78,14 @@ export default function App() {
               Aisenedu
             </Link>
             <nav aria-label="主导航" className="flex items-center gap-5 text-sm font-medium">
-              <Link className="cursor-pointer text-slate-600 transition-colors hover:text-blue-700" to={HOME_ROUTE}>
+              <Link aria-current={location.pathname === HOME_ROUTE ? 'page' : undefined} className="cursor-pointer text-slate-600 transition-colors hover:text-blue-700" to={HOME_ROUTE}>
                 工具首页
               </Link>
               <span className="hidden text-slate-400 sm:inline">教育工具平台</span>
             </nav>
           </div>
         </header>
-        <main id="main-content" tabIndex={-1}>
+        <main id="main-content" ref={mainRef} tabIndex={-1}>
           <RouteErrorBoundary>
             <Suspense fallback={<PageLoading />}>
               <Routes>

@@ -25,6 +25,7 @@ describe('姓名贴工作台流程', () => {
     expect(within(screen.getByLabelText('当前工作台状态')).getByText('2 人')).toBeVisible()
     expect(screen.getByText('第 1 / 1 页 · 页面按 mm 排版')).toBeVisible()
     expect(screen.getByRole('button', { name: '打印姓名贴' })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: /^导入名单：/ }))
     expect(within(screen.getByRole('list', { name: '姓名预览' })).getByText('林小满')).toBeVisible()
   })
 

@@ -71,7 +71,7 @@ corepack pnpm test:e2e
 - 数据边界：姓名只保留在当前页面内存，不写入 URL、`localStorage`、`sessionStorage`、日志或网络请求
 - 打印：浏览器打印与校准页；通用模板均需用户自行实物校准，不承诺特定厂商标签纸精度
 
-XLSX 解析使用 `xlsx@0.18.5`（SheetJS CE，Apache-2.0），仅在用户选择 XLSX 文件后动态加载；浏览器打印使用 `react-to-print@3.3.0`（MIT）。最近一次生产构建中，XLSX 独立 chunk 约 429.53 kB（gzip 约 143.08 kB），不会进入首页首屏 chunk。
+XLSX 解析使用 `read-excel-file@9.3.10`（MIT），仅在用户选择 XLSX 文件后通过浏览器专用入口动态加载；CSV 继续使用 feature 内的受限解析器。浏览器打印使用 `react-to-print@3.3.0`（MIT）。解析器不进入首页首屏 chunk，文件仍受 5MB、10,000 行、100 列和 80 字符限制。
 
 Chrome 与 Edge 已完成页面加载、空状态、文本/CSV 导入和无横向滚动检查；浏览器系统打印对话框及真实打印机硬件无法由自动化环境可靠控制，正式使用仍需在目标浏览器/打印机上确认 100% 缩放、关闭“适合页面”、纸张进纸和 X/Y 校准。
 

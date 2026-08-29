@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react'
 import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
 import { validateLayout } from '../utils/validation'
 import type { FieldErrors, LabelPrintFormState, LayoutField } from '../types'
@@ -30,7 +30,7 @@ function updateCandidate(
   return { paper: draft.paper, layout: { ...draft.layout, [key]: value } }
 }
 
-export function useLabelPrintingDraft() {
+function useLabelPrintingDraftState() {
   const draft = useLabelPrintingStore((state) => state.draft)
   const selectedTemplateId = useLabelPrintingStore((state) => state.selectedTemplateId)
   const updatePaper = useLabelPrintingStore((state) => state.updatePaper)
@@ -43,35 +43,24 @@ export function useLabelPrintingDraft() {
     setFormErrors({})
   }, [selectedTemplateId, setFormErrors])
 
-  const updateErrors = useCallback((errors: FieldErrors) => {
-    setForm((current) => ({ ...current, errors }))
-    setFormErrors(errors)
-  }, [setFormErrors])
-
   const setNumberField = useCallback((field: LayoutField, rawValue: string) => {
+    const value = Number(rawValue)
+    const result = rawValue.trim() === '' || !Number.isFinite(value)
+      ? { valid: false, errors: { [field]: '请输入有效数字' } as FieldErrors }
+      : validateLayout(updateCandidate(draft, field, value))
+
     setForm((current) => ({
       ...current,
       values: { ...current.values, [field]: rawValue },
       touched: { ...current.touched, [field]: true },
+      errors: result.errors,
     }))
-
-    if (rawValue.trim() === '') {
-      updateErrors({ ...form.errors, [field]: '请输入有效数字' })
-      return
-    }
-    const value = Number(rawValue)
-    if (!Number.isFinite(value)) {
-      updateErrors({ ...form.errors, [field]: '请输入有效数字' })
-      return
-    }
-
-    const result = validateLayout(updateCandidate(draft, field, value))
-    updateErrors(result.errors)
+    setFormErrors(result.errors)
     if (!result.valid) return
 
     if (field.startsWith('paper.')) updatePaper({ [field.slice(6)]: value } as Parameters<typeof updatePaper>[0])
     else updateLayout({ [field.slice(7)]: value } as Parameters<typeof updateLayout>[0])
-  }, [draft, form.errors, updateErrors, updateLayout, updatePaper])
+  }, [draft, setFormErrors, updateLayout, updatePaper])
 
   const resetFormFromDraft = useCallback(() => setForm(createFormState(useLabelPrintingStore.getState().draft)), [])
   const setFieldError = useCallback((field: LayoutField, message: string | undefined) => {
@@ -91,4 +80,18 @@ export function useLabelPrintingDraft() {
   }), [form])
 
   return { form, fieldState, setNumberField, setFieldError, resetFormFromDraft }
+}
+
+type LabelPrintingDraftContextValue = ReturnType<typeof useLabelPrintingDraftState>
+const LabelPrintingDraftContext = createContext<LabelPrintingDraftContextValue | null>(null)
+
+export function LabelPrintingDraftProvider({ children }: PropsWithChildren) {
+  const value = useLabelPrintingDraftState()
+  return <LabelPrintingDraftContext.Provider value={value}>{children}</LabelPrintingDraftContext.Provider>
+}
+
+export function useLabelPrintingDraft() {
+  const context = useContext(LabelPrintingDraftContext)
+  if (!context) throw new Error('useLabelPrintingDraft must be used inside LabelPrintingDraftProvider')
+  return context
 }

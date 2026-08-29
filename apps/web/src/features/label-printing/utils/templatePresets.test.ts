@@ -14,17 +14,14 @@ describe('姓名贴模板预设', () => {
       [2, 8, 2, false],
       [3, 8, 2, false],
       [4, 10, 2, false],
-      [3, 8, 3, false],
+      [3, 8, 2, false],
       [3, 8, 2, false],
     ])
   })
 
-  it('将相同网格但不同内容行数定义为不同预设', () => {
-    const twoLines = LABEL_TEMPLATE_PRESETS.find((template) => template.id === 'a4-3x8-2-lines')
-    const threeLines = LABEL_TEMPLATE_PRESETS.find((template) => template.id === 'a4-3x8-3-lines')
-
-    expect(twoLines?.layout).toEqual(threeLines?.layout)
-    expect(twoLines?.contentCapacity.maxLines).toBe(2)
-    expect(threeLines?.contentCapacity.maxLines).toBe(3)
+  it('模板能力文案与固定双字段模型一致', () => {
+    const dualField = LABEL_TEMPLATE_PRESETS.find((template) => template.id === 'a4-3x8-3-lines')
+    expect(dualField?.name).toContain('双字段')
+    expect(dualField?.contentCapacity.recommendedUse).toContain('班级与姓名')
   })
 })

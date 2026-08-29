@@ -1,16 +1,14 @@
-import { Check, RotateCcw, Ruler } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Check, Download, RotateCcw, Ruler, Save, Trash2, Upload } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
 import { Button } from '../../../components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../../../components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
-import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs'
 import { useLabelPrintingDraft } from '../hooks/useLabelPrintingDraft'
 import { asMm } from '../types'
 import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
 import { LABEL_TEMPLATE_PRESETS } from '../utils/templatePresets'
+import { createTemplateConfig, parseTemplateConfig } from '../utils/templateConfig'
 import { FieldLabel, NumberField } from './FieldMessage'
-
-type TemplateFilter = 'all' | '1' | '2' | '3' | '4'
 
 const LETTER = { widthMm: 215.9, heightMm: 279.4 }
 
@@ -20,10 +18,17 @@ export function LabelTemplatePanel() {
   const selectTemplate = useLabelPrintingStore((state) => state.selectTemplate)
   const updatePaper = useLabelPrintingStore((state) => state.updatePaper)
   const restoreSelectedTemplateDefaults = useLabelPrintingStore((state) => state.restoreSelectedTemplateDefaults)
+  const draft = useLabelPrintingStore((state) => state.draft)
+  const updatePaperConfig = useLabelPrintingStore((state) => state.updatePaper)
+  const updateLayoutConfig = useLabelPrintingStore((state) => state.updateLayout)
+  const updateAppearanceConfig = useLabelPrintingStore((state) => state.updateAppearance)
+  const setBackgroundImage = useLabelPrintingStore((state) => state.setBackgroundImage)
   const { fieldState, resetFormFromDraft, setNumberField } = useLabelPrintingDraft()
-  const [filter, setFilter] = useState<TemplateFilter>('all')
   const [restoreOpen, setRestoreOpen] = useState(false)
-  const visibleTemplates = useMemo(() => LABEL_TEMPLATE_PRESETS.filter((template) => filter === 'all' || template.contentCapacity.maxLines === Number(filter)), [filter])
+  const [configName, setConfigName] = useState('我的姓名贴模板')
+  const [configMessage, setConfigMessage] = useState<string | null>(null)
+  const configInputRef = useRef<HTMLInputElement>(null)
+  const visibleTemplates = useMemo(() => LABEL_TEMPLATE_PRESETS, [])
 
   const updateOrientation = (orientation: 'portrait' | 'landscape') => {
     if (orientation === paper.orientation) return
@@ -45,6 +50,40 @@ export function LabelTemplatePanel() {
   const rawStartValue = fieldState.value('layout.firstLabelIndex')
   const startValue = rawStartValue === '' || Number.isNaN(Number(rawStartValue)) ? rawStartValue : String(Number(rawStartValue) + 1)
 
+  const exportConfig = () => {
+    const blob = new Blob([JSON.stringify(createTemplateConfig(draft, configName), null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = 'aisenedu-label-template.json'
+    anchor.click()
+    URL.revokeObjectURL(url)
+    setConfigMessage('模板配置已导出；导出内容不含名单、班级、文件名或背景图片。')
+  }
+
+  const saveLocalConfig = () => {
+    const config = createTemplateConfig(draft, configName)
+    localStorage.setItem('aisenedu.label-templates.v1', JSON.stringify([config]))
+    setConfigMessage('模板配置已保存在本机，不包含当前名单。')
+  }
+
+  const importConfig = async (file?: File) => {
+    if (!file) return
+    try {
+      const result = parseTemplateConfig(JSON.parse(await file.text()))
+      if (!result.ok) { setConfigMessage(result.message); return }
+      updatePaperConfig(result.config.paper)
+      updateLayoutConfig(result.config.layout)
+      setBackgroundImage(undefined)
+      updateAppearanceConfig(result.config.appearance)
+      setConfigName(result.config.name)
+      resetFormFromDraft()
+      setConfigMessage('模板配置已导入，当前名单保持不变。')
+    } catch {
+      setConfigMessage('配置文件无法读取，请选择 Aisenedu 导出的 JSON 文件。')
+    }
+  }
+
   return (
     <section aria-labelledby="template-heading" className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm">
       <div className="flex items-start gap-3">
@@ -54,9 +93,6 @@ export function LabelTemplatePanel() {
 
       <div className="mt-5">
         <div className="flex items-center justify-between gap-3"><h3 className="text-sm font-semibold text-text">模板卡片</h3><span className="text-xs text-text-muted">未实物验证</span></div>
-        <Tabs className="mt-3 w-full" onValueChange={(value) => setFilter(value as TemplateFilter)} value={filter}>
-          <TabsList className="flex w-full flex-wrap justify-start"><TabsTrigger value="all">全部</TabsTrigger><TabsTrigger value="1">1 行</TabsTrigger><TabsTrigger value="2">2 行</TabsTrigger><TabsTrigger value="3">3 行</TabsTrigger><TabsTrigger value="4">4 行</TabsTrigger></TabsList>
-        </Tabs>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {visibleTemplates.map((template) => {
             const isSelected = template.id === selectedTemplateId
@@ -70,7 +106,7 @@ export function LabelTemplatePanel() {
                 </div>
                 <h4 className="mt-3 text-sm font-semibold text-text">{template.name}</h4>
                 <p className="mt-1 text-xs leading-5 text-text-muted">{template.layout.columns} 列 × {template.layout.rows} 行 · 每张 {template.layout.columns * template.layout.rows} 枚</p>
-                <p className="mt-1 text-xs leading-5 text-text-muted">最多 {template.contentCapacity.maxLines} 行内容 · {template.contentCapacity.recommendedUse}</p>
+                <p className="mt-1 text-xs leading-5 text-text-muted">支持姓名一行，或班级 + 姓名两行 · {template.contentCapacity.recommendedUse}</p>
                 <span className="mt-2 inline-flex rounded-md bg-surface-muted px-2 py-1 text-xs font-medium text-text-muted">通用模板，需自行校准</span>
               </button>
             )
@@ -89,6 +125,7 @@ export function LabelTemplatePanel() {
 
       <div className="mt-6 border-t border-border pt-5"><h3 className="text-sm font-semibold text-text">标签网格</h3><div className="mt-4 grid gap-4 sm:grid-cols-2"><NumberField error={fieldState.error('layout.labelWidthMm')} help="单枚标签的物理宽度，不包含横向间距。" id="label-width" label="标签宽度" min={1} onChange={(value) => setNumberField('layout.labelWidthMm', value)} unit="mm" value={fieldState.value('layout.labelWidthMm')} /><NumberField error={fieldState.error('layout.labelHeightMm')} help="单枚标签的物理高度，不包含纵向间距。" id="label-height" label="标签高度" min={1} onChange={(value) => setNumberField('layout.labelHeightMm', value)} unit="mm" value={fieldState.value('layout.labelHeightMm')} /><NumberField error={fieldState.error('layout.columns')} help="每行的标签列数。" id="label-columns" label="列数" max={20} min={1} onChange={(value) => setNumberField('layout.columns', value)} step={1} unit="列" value={fieldState.value('layout.columns')} /><NumberField error={fieldState.error('layout.rows')} help="每页的标签行数。" id="label-rows" label="行数" max={50} min={1} onChange={(value) => setNumberField('layout.rows', value)} step={1} unit="行" value={fieldState.value('layout.rows')} /></div><div className="mt-4 grid gap-4 sm:grid-cols-2"><NumberField error={fieldState.error('layout.gapXmm')} help="相邻标签之间的横向空白。" id="gap-x" label="横向间距" min={0} onChange={(value) => setNumberField('layout.gapXmm', value)} unit="mm" value={fieldState.value('layout.gapXmm')} /><NumberField error={fieldState.error('layout.gapYmm')} help="相邻标签之间的纵向空白。" id="gap-y" label="纵向间距" min={0} onChange={(value) => setNumberField('layout.gapYmm', value)} unit="mm" value={fieldState.value('layout.gapYmm')} /><NumberField error={fieldState.error('layout.firstLabelIndex')} help="从当前纸张的第几枚标签开始打印；前面的格子会保留为空。" id="first-label-index" label="起始格" min={1} onChange={(value) => { const parsed = Number(value); setNumberField('layout.firstLabelIndex', value.trim() === '' ? '' : Number.isFinite(parsed) ? String(parsed - 1) : value) }} step={1} unit="格" value={startValue} /></div></div>
 
+      <div className="mt-6 border-t border-border pt-5"><h3 className="text-sm font-semibold text-text">本地模板配置</h3><p className="mt-1 text-xs leading-5 text-text-muted">仅保存纸张、布局、样式和校准参数；名单、班级、文件名与背景图片不会保存。</p><div className="mt-3 flex flex-wrap items-center gap-2"><input aria-label="本地模板名称" className="min-h-10 min-w-52 flex-1 rounded-lg border border-border bg-surface-raised px-3 text-sm text-text outline-none focus:border-focus focus:ring-4 focus:ring-focus/15" maxLength={60} onChange={(event) => setConfigName(event.target.value)} value={configName} /><Button onClick={saveLocalConfig} size="sm" type="button" variant="secondary"><Save aria-hidden="true" className="size-4" />保存到本机</Button><Button onClick={exportConfig} size="sm" type="button" variant="secondary"><Download aria-hidden="true" className="size-4" />导出</Button><Button onClick={() => configInputRef.current?.click()} size="sm" type="button" variant="secondary"><Upload aria-hidden="true" className="size-4" />导入</Button><Button aria-label="删除本地模板配置" onClick={() => { localStorage.removeItem('aisenedu.label-templates.v1'); setConfigMessage('本机模板配置已删除。') }} size="icon" type="button" variant="ghost"><Trash2 aria-hidden="true" className="size-4" /></Button><input accept="application/json,.json" className="sr-only" onChange={(event) => { void importConfig(event.target.files?.[0]); event.target.value = '' }} ref={configInputRef} type="file" /></div>{configMessage ? <p className="mt-2 text-xs leading-5 text-text-muted" role="status">{configMessage}</p> : null}</div>
       <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5"><Button onClick={() => setRestoreOpen(true)} size="sm" variant="secondary"><RotateCcw aria-hidden="true" className="size-4" />恢复当前模板默认参数</Button><span className="text-xs leading-5 text-text-muted">会重置纸张、网格、样式和校准偏移，保留姓名名单与起始格。</span></div>
       <Dialog onOpenChange={setRestoreOpen} open={restoreOpen}><DialogContent><DialogTitle>恢复当前模板默认参数？</DialogTitle><DialogDescription>会恢复当前模板的纸张、标签尺寸、间距、外观和校准偏移；姓名名单与起始格会保留。</DialogDescription><div className="mt-6 flex justify-end gap-3"><Button onClick={() => setRestoreOpen(false)} variant="secondary">取消</Button><Button onClick={() => { restoreSelectedTemplateDefaults(); resetFormFromDraft(); setRestoreOpen(false) }}><RotateCcw aria-hidden="true" className="size-4" />恢复默认</Button></div></DialogContent></Dialog>
     </section>

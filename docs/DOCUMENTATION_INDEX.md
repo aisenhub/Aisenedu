@@ -10,6 +10,9 @@
 | [`PROJECT_ARCHITECTURE.md`](PROJECT_ARCHITECTURE.md) | 技术栈、目录、模块边界、数据流和安全边界 | 架构、数据流或基础设施变化时 |
 | [`NAME_LABEL_PRINTING_ARCHITECTURE.md`](NAME_LABEL_PRINTING_ARCHITECTURE.md) | 学生姓名贴工具的范围、功能架构、打印规则、隐私边界与验证标准 | 姓名贴功能的范围、设计或实现决策变化时 |
 | [`NAME_LABEL_PRINTING_AGENT_TASKS.md`](NAME_LABEL_PRINTING_AGENT_TASKS.md) | 可直接交给开发 Agent 的姓名贴实现任务、依赖和验收条件 | 开发顺序、范围或验收条件变化时 |
+| [`OPTIMIZATION_EXECUTION_PLAN.md`](OPTIMIZATION_EXECUTION_PLAN.md) | 姓名贴工具优化任务、依赖、验收条件与实施进度看板 | 开始、阻塞、完成或回归任一优化任务时 |
+| [`NAME_LABEL_PERFORMANCE.md`](NAME_LABEL_PERFORMANCE.md) | 10,000 条合成名单的性能基线与 Worker 决策 | 性能边界或解析方案变化时 |
+| [`NAME_LABEL_SECOND_PHASE_PROPOSALS.md`](NAME_LABEL_SECOND_PHASE_PROPOSALS.md) | 姓名贴第二阶段能力调研与立项建议（仅调研） | 第二阶段范围评审时 |
 | [`../reference/REFERENCE_PROJECT_INDEX.md`](../reference/REFERENCE_PROJECT_INDEX.md) | GitHub 参考项目、搜索关键词、许可证、复用结论和取舍理由 | 每次项目/功能/模块开发前调研后 |
 | [`../AGENTS.md`](../AGENTS.md) | AI Coding Agent 与开发者的工程协作规则 | 工程规则变化时 |
 | [`../README.md`](../README.md) | 项目介绍、快速开始和常用命令 | 初始化、命令或入口变化时 |

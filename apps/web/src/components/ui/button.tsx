@@ -5,7 +5,7 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'icon' | 'sm' | 'md' | 'lg'
 }
 
 const variants: Record<ButtonVariant, string> = {
@@ -16,6 +16,7 @@ const variants: Record<ButtonVariant, string> = {
 }
 
 const sizes = {
+  icon: 'size-11 p-0',
   sm: 'min-h-10 px-3 text-sm',
   md: 'min-h-11 px-4 text-sm',
   lg: 'min-h-12 px-5 text-base',

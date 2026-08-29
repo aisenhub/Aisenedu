@@ -15,7 +15,7 @@
 - 粘贴名单、输入名单、导入 UTF-8 CSV 与 XLSX 文件。
 - 从导入数据中选择姓名列，并可选选择班级列；清洗空白行、提示重复项和无效项。
 - A4 纵向/横向模板与自定义纸张；以 mm 为单位调整页边距、标签尺寸、行列和间距。
-- 模板卡片库：按“每张纸的列×行”和“每枚可容纳的内容行数”选择经过验证的常用标签纸；支持恢复当前模板的默认参数。
+- 模板卡片库：按每张纸的列×行选择通用标签纸；内容固定支持姓名一行，或班级 + 姓名两行；支持恢复当前模板的默认参数。
 - 姓名贴样式：字体、字号、粗细、对齐、文字颜色、背景、边框、圆角和内边距。
 - 按指定起始空白标签位置排版；支持多页和打印前的实际尺寸预览。
 - 浏览器打印；打印校准页与 X/Y 偏移量。
@@ -92,7 +92,7 @@
 
 ### 4.2 页面结构
 
-桌面（`>= 1024px`）采用两栏工作台：左侧为可滚动的配置栏，右侧为固定可见的预览与打印操作。主操作始终是“打印姓名贴”；次要操作包括导入、清空和校准。
+桌面（`>= 1024px`）采用两栏工作台：左侧为四步导航和当前步骤内容，右侧为固定可见的预览与打印操作；页面只保留主文档纵向滚动，不再在左栏建立独立纵向滚动。主操作始终是“打印姓名贴”；次要操作包括导入、清空和校准。
 
 ```text
 页面标题 / 返回工具页
@@ -100,7 +100,7 @@
 │   ├── 粘贴名单 | 导入 CSV/XLSX
 │   └── 姓名列（必选）/班级列（可选）、清洗结果、名单预览
 ├── 标签纸与排版面板
-│   ├── 模板卡片库（列×行、每枚内容行数、每张数量、适用内容） | 自定义尺寸
+│   ├── 模板卡片库（列×行、双字段说明、每张数量、适用内容） | 自定义尺寸
 │   ├── 页边距、标签尺寸、行列、间距、起始格
 │   └── 恢复当前模板默认参数、校准偏移量与打印兼容说明
 ├── 内容与样式面板
@@ -256,17 +256,21 @@ type LabelTemplatePreset = {
 }
 
 type LabelAppearance = {
-  fontFamily: string
+  fontPreset: 'systemSans' | 'systemSerif' | 'kaiTi' | 'monospace'
   fontSizePt: number
   fontWeight: 400 | 500 | 600 | 700
   textAlign: 'left' | 'center' | 'right'
   textColor: string
-  backgroundColor: string
+  backgroundColor: string // 标准化为 #RRGGBB
+  backgroundMode: 'solid' | 'image'
+  backgroundImage?: { mimeType: 'image/png' | 'image/jpeg' | 'image/webp'; objectUrl: string; naturalWidth: number; naturalHeight: number; scale: number; offsetX: number; offsetY: number; maskTone: 'light' | 'dark'; maskOpacity: number }
+  borderMode: 'solid' | 'randomGradient'
+  gradientPalette: { start: string; end: string }
+  gradientSeed: number
   borderColor: string
   borderWidthMm: LengthMm
   borderRadiusMm: LengthMm
   paddingMm: LengthMm
-  allowWrap: boolean
   showClassTitle: boolean
   showNameTitle: boolean
 }
@@ -305,7 +309,7 @@ type LabelProjectDraft = {
 | CSV | UTF-8，支持逗号与常见引号转义 | 表格、列标题与行号；姓名列必选，班级列可选。 |
 | XLSX | 读取第一个工作表；允许用户选择列 | 表格、列标题与行号；姓名列必选，班级列可选。 |
 
-XLSX/CSV 解析使用按需加载的 SheetJS CE `xlsx`（Apache-2.0）；导入逻辑必须包装在 service 内，禁止在组件中直接依赖该库。实际安装版本和产物体积在实施时记录。
+XLSX 解析使用按需加载的 `read-excel-file@9.3.10` 浏览器入口（MIT）；CSV 继续使用 feature 内的受限解析器。导入逻辑必须包装在 service 内，禁止在组件中直接依赖解析库。解析依赖只在用户选择 XLSX 文件后加载，实际版本和产物体积在变更记录中维护。
 
 ### 7.2 清洗规则
 
@@ -378,9 +382,9 @@ gridHeight <= availableHeight
 
 ### 9.1 预设
 
-初版将模板作为可筛选的卡片库，而不是一组未说明用途的行列输入。每张模板卡必须展示缩略网格、`列×行`、`每张数量`、`每枚最多内容行数`、适用内容和是否已实物验证。模板数量较多时，提供“全部 / 1 行 / 2 行 / 3 行 / 4 行内容”的筛选；不展示来源不明的“生成次数”或热度排名。
+初版将模板作为卡片库，而不是一组未说明用途的行列输入。每张模板卡必须展示缩略网格、`列×行`、`每张数量`、固定双字段说明、适用内容和是否已实物验证；不展示来源不明的“生成次数”或热度排名。
 
-初版内置通用矩形变体：A4 2×8（1–2 行内容）、3×8（2 行内容）、4×10（2 行内容）、3×8（3 行内容），以及 A4 自定义。每一个“行数不同”的变体都是独立的内容容量预设，会同时定义推荐字号、行高、内边距和溢出策略；不能仅靠把同一模板的字体压小来伪造更多内容行。
+初版内置通用矩形变体：A4 2×8、3×8、4×10、3×8 双字段，以及 A4 自定义。所有模板均支持姓名一行，或班级 + 姓名两行；不能以运行时自动换行来改变字段语义。
 
 预设仅给出可编辑的默认值，不应把厂商品牌型号写死为已认证精确模板。未实物验证的卡片必须标记为“通用模板”；经实物验证后再升级为“已验证模板”。
 
@@ -399,7 +403,7 @@ gridHeight <= availableHeight
 - 优先复用 React、React Router、Zustand、Tailwind、Lucide 与现有 shadcn/ui 组件。
 - 基础 UI 和测试依赖在 NL-00 一次性建立：按需生成的 shadcn/ui 基础组件、Vitest、React Testing Library 与浏览器验证工具只服务于本项目，不引入第二套 UI 框架。
 - `react-to-print` 使用 v3 API（实施时锁定当期兼容的 v3 版本），唯一职责是打印 iframe/生命周期；其余布局仍由项目代码控制。
-- XLSX 读取使用 SheetJS Community Edition 的 `xlsx`，采用 Apache-2.0 许可证；仅在导入时动态加载，不得把解析库暴露到通用 UI 组件中。
+- XLSX 读取使用 `read-excel-file@9.3.10`，采用 MIT 许可证；仅在导入时动态加载，不得把解析库暴露到通用 UI 组件中。该库的浏览器入口可读取 `ArrayBuffer`，默认读取首个工作表，后续大文件可切换其 Web Worker 入口。
 - 暂不引入画布编辑器、PDF 生成库或第二套 UI 框架。
 
 ### 10.2 性能目标
@@ -454,7 +458,7 @@ label_project_items
 | 风险/待决项 | 当前处理 | 需要的后续决定 |
 | --- | --- | --- |
 | 纸张/打印机误差 | 校准偏移 + 通用模板 | 收集实物验证的标签纸型号后再承诺精确预设。 |
-| XLSX 包体积、兼容性与恶意大文件 | SheetJS CE 动态加载、文件/行列上限，必要时 Worker | 用真实学校导出文件测量包体积与解析耗时。 |
+| XLSX 包体积、兼容性与恶意大文件 | `read-excel-file` 动态加载、文件/行列上限，必要时 Worker | 用真实学校导出文件测量包体积与解析耗时。 |
 | 中文字体在不同系统差异 | 浏览器系统字体栈 + 直接打印 | 若需固定输出，评估受许可约束的中文字体与 PDF 输出。 |
 | 云端保存 | MVP 不做 | 确认租户、认证、班级归属、保留期和删除流程。 |
 | 内容字段与输出模式 | MVP 打印批量姓名贴；班级列为可选字段 | 班级管理、拼音、学号、单人铺满、桌牌和主题模板均须按第 4.5 节逐项完成隐私、排版与打印验证后再扩展。 |
@@ -464,5 +468,13 @@ label_project_items
 - [GitHub 调研索引](../reference/REFERENCE_PROJECT_INDEX.md) 中“学生姓名贴生成与打印”条目。
 - `vivesweb/printable_labels_pdf` 的布局参数与起始标签位思想，仅作为设计参考，不复制 GPL 代码。
 - `MatthewHerbst/react-to-print` 的 v3 React 打印组件模式；实际锁定版本在实施时确认。
-- `SheetJS/sheetjs` 的浏览器 XLSX/CSV 读取能力与 Apache-2.0 许可证；仅动态加载其 `xlsx` 解析能力。
+- `read-excel-file` 的浏览器 XLSX 读取能力与 MIT 许可证；当前实现只动态加载其 `read-excel-file/browser` 入口；历史 SheetJS 调研仅作为被替换方案记录，不再作为运行时依赖。
 - [TraeWork 姓名贴打印工具参考页面](https://share.traecontent.cn/artifact/.ODC7B4-IHGJHN) 的模式划分、四步工作流提示、实时预览和打印提示，仅参考产品交互；不使用其代码、卡通素材或像素排版方式。
+
+## 14. 优化后的实现边界
+
+- 工作流由 `LabelWorkflowStepper` 管理当前步骤；`LabelPrintingDraftProvider` 在工作台根部提供单一配置表单会话，模板面板和校准面板共享原始值、触碰状态与错误。
+- `LabelAppearance` 使用本机字体预设、标准 HEX 色值、纯色/本地图片背景、实线/确定性渐变边框和固定的班级/姓名双行模型。字段标题控制位于名单导入区域，不再放在样式面板。
+- `LabelBackgroundEditor` 使用原生 Pointer Events、滑块和按钮完成会话级背景图拖动/缩放；背景图只保留当前 object URL 和受限变换参数，打印与屏幕共用 `LabelPageCanvas`。
+- 本地模板通过 `templateConfig.ts` 的版本化白名单导入、导出和保存；配置不能包含姓名、班级、文件名、背景图片或 object URL。
+- 真实打印仍依赖浏览器打印对话框的 100% 缩放和背景图形选项；实体打印机的纸张进纸与毫米偏差必须在用户环境中校准，不能由 Web 页面宣称自动验证。

@@ -89,7 +89,7 @@
 - 许可证：`vivesweb/printable_labels_pdf` 和 `figuren-theater/label-printing` 为 GPL-3.0，不复制代码；`react-to-print`、`jsPDF`、`ExcelJS` 为 MIT；SheetJS CE 为 Apache-2.0；其余仓库未核实到明确许可证，不复制代码。
 - 查看内容：各项目 GitHub README、LICENSE、可用的 `package.json`/标签布局源码与仓库结构；重点检查了标签尺寸、纸张、行列、边距、间距、起始格、React 打印、中文 PDF 字体和 XLSX 处理说明。
 - 可复用结论：采用“真实物理单位 + 统一分页算法 + 指定起始空白格 + 打印校准”的设计；采用 React 专用打印组件模式；导入层独立于 UI；直接浏览器打印优先于首版客户端 PDF。
-- Aisenedu 采用方案：新增独立 `label-printing` feature，MVP 仅在浏览器内存保存姓名，使用 DOM 预览和打印媒介样式；打印采用 `react-to-print` v3 API，XLSX/CSV 采用按需加载的 SheetJS CE `xlsx`。实施时锁定实际版本、记录产物体积，并以文件/行列限制与必要的 Worker 降低本地解析风险。
+- Aisenedu 采用方案：新增独立 `label-printing` feature，MVP 仅在浏览器内存保存姓名，使用 DOM 预览和打印媒介样式；打印采用 `react-to-print` v3 API，XLSX/CSV 采用按需加载的 `read-excel-file` 浏览器入口和 feature 内 CSV 解析。以文件/行列限制与必要的 Worker 降低本地解析风险。
 - 不采用内容及取舍理由：不采用 PHP/WordPress/旧 wkhtmltopdf 技术栈；不复制 GPL 或许可证不清晰的代码；不在 MVP 引入 PDF、二维码、云端项目保存和班级管理，避免扩大范围或暴露学生信息。
 
 ## 2026-08-29｜学生姓名贴交互参考（非代码来源）
@@ -157,3 +157,27 @@
 - Impeccable：成品审查，负责“哪里不够好、如何优化和是否达到交付质量”。
 
 它们属于 AI 辅助能力，不是运行时依赖，也不替代 Aisenedu 的 shadcn/ui 组件库、产品需求、权限模型和人工验收。
+
+## 2026-08-29｜OPT-01 XLSX 解析器安全替换
+
+- GitHub 搜索关键词：`browser xlsx parser JavaScript MIT read-excel-file GitHub`、`browser XLSX parser security JavaScript MIT alternative SheetJS GitHub`、`React browser spreadsheet import Web Worker`
+- 搜索范围/方向：浏览器端 XLSX 读取、首工作表读取、ArrayBuffer/File API、Web Worker 支持、许可证、维护状态和解析包体积。
+- 参考项目：`catamphetamine/read-excel-file`、`exceljs/exceljs`、`observablehq/xlsx`/SheetJS Community Edition。
+- 参考链接：[read-excel-file](https://github.com/catamphetamine/read-excel-file)、[ExcelJS](https://github.com/exceljs/exceljs)、[SheetJS Community Edition](https://github.com/observablehq/xlsx)。
+- 许可证：`read-excel-file` 为 MIT；ExcelJS 为 MIT；SheetJS Community Edition 为 Apache-2.0。实际采用依赖为 `read-excel-file@9.3.10`，许可证以其仓库和安装包 LICENSE 为准。
+- 查看内容：`read-excel-file` README 的浏览器入口、`readSheet()` 首工作表行为、ArrayBuffer/File 输入、Web Worker 入口、错误类型、性能说明和 LICENSE；同时对比 ExcelJS 的维护/依赖体量说明与 SheetJS 当前浏览器解析/安全说明。
+- 可复用结论：当前姓名贴只需要读取首个工作表的二维值，不需要样式、公式写回或完整工作簿编辑；应使用专用浏览器入口、保留动态加载和文件/行列上限，并为大文件预留 Worker 路径。
+- Aisenedu 采用方案：用 `read-excel-file@9.3.10` 替换 `xlsx@0.18.5` 的用户上传解析路径；通过 `read-excel-file/browser` 动态导入，读取 `ArrayBuffer` 后交给现有表格模型；CSV 继续使用 feature 内受限解析器，不额外引入 CSV 依赖。
+- 不采用内容及取舍理由：不采用 ExcelJS，当前只读二维表且其浏览器依赖体量和维护状态不如本需求合适；不继续使用 `xlsx@0.18.5`，避免将旧解析器保留在生产依赖和用户上传路径；不复制任何参考项目代码。
+
+## 2026-08-29｜OPT-13 本地背景编辑与样式模型
+
+- GitHub 搜索关键词：`React image crop component TypeScript Pointer Events MIT react-easy-crop`、`react-image-crop GitHub LICENSE TypeScript`、`native color palette local image background printable UI`
+- 搜索范围/方向：React 图片裁切/缩放交互、移动端触摸、键盘替代操作、TypeScript、许可证、维护活跃度和打印前本地资源边界。
+- 参考项目：`ValentinH/react-easy-crop`、`DominicTobias/react-image-crop`（当前仓库镜像/维护信息需以其主仓库为准）、`thegreatercurve/react-simple-crop`。
+- 参考链接：[react-easy-crop](https://github.com/ValentinH/react-easy-crop)、[react-image-crop](https://github.com/DominicTobias/react-image-crop)、[react-simple-crop](https://github.com/thegreatercurve/react-simple-crop)。
+- 许可证：`react-easy-crop` 为 MIT；`react-image-crop` 项目元数据标示 ISC；`react-simple-crop` 为 MIT。实际是否引入依赖仍需结合包体积、React 19 兼容性和打印 object URL 测试确认。
+- 查看内容：`react-easy-crop` README 的拖动/缩放/旋转、移动端、键盘步进和自定义样式能力；其 `package.json` 的版本、许可证和副作用声明；`react-image-crop` 的 TypeScript/响应式裁切方向；`react-simple-crop` 的无依赖实现方向。
+- 可复用结论：背景编辑需要“拖动 + 缩放 + 键盘/按钮替代”三类操作，裁切交互必须限制在代表性标签预览中；颜色选择可优先使用原生 `input[type=color]` 与项目色板，不必为单一颜色引入选择器依赖。
+- Aisenedu 采用方案：先以原生 Pointer Events、按钮和范围滑块建立轻量会话级编辑模型；仅保存 MIME、临时 object URL、尺寸、缩放、偏移和遮罩等受限状态，预览和打印共享图层模型。
+- 不采用内容及取舍理由：当前不直接引入第三方裁切组件，避免为单张全标签背景增加绝对定位样式和新 CSS 体系；若原生实现无法稳定完成手势、图片解码或打印克隆，再单独评估 MIT 的 `react-easy-crop`，不使用许可证或维护状态不清晰的代码。

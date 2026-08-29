@@ -11,6 +11,9 @@ export function LabelImportPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { cancelTable, cleaning, error, importFile, importText, selectColumn, status, table } = useLabelImport()
   const names = useLabelPrintingStore((state) => state.draft.names)
+  const appearance = useLabelPrintingStore((state) => state.draft.appearance)
+  const updateAppearance = useLabelPrintingStore((state) => state.updateAppearance)
+  const hasClassData = names.some((name) => Boolean(name.className))
 
   return (
     <section aria-labelledby="import-heading" className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm">
@@ -30,6 +33,7 @@ export function LabelImportPanel() {
       {status === 'parsing' ? <div aria-live="polite" className="mt-4 flex items-center gap-2 text-sm text-text-muted" role="status"><LoaderCircle aria-hidden="true" className="size-4 animate-spin" />正在读取文件，文件不会离开浏览器…</div> : null}
       {error ? <p className="mt-4 rounded-lg border border-error/25 bg-error/5 px-3 py-2 text-sm leading-6 text-error" role="alert">{error}</p> : null}
       {table && status === 'select-column' ? <NameColumnPicker onCancel={cancelTable} onSelect={selectColumn} table={table} /> : null}
+      {names.length > 0 && status === 'ready' ? <fieldset className="mt-4 rounded-xl border border-border bg-surface p-4"><legend className="px-1 text-sm font-semibold text-text">字段标题</legend><p className="mt-1 text-xs leading-5 text-text-muted">标题只影响标签中的显示，不会修改原始名单。</p><div className="mt-3 grid gap-2 sm:grid-cols-2"><label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm font-medium text-text hover:bg-surface-muted"><input checked={appearance.showNameTitle} className="size-5 accent-primary" onChange={(event) => updateAppearance({ showNameTitle: event.target.checked })} type="checkbox" />显示“姓名”标题</label>{hasClassData ? <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm font-medium text-text hover:bg-surface-muted"><input checked={appearance.showClassTitle} className="size-5 accent-primary" onChange={(event) => updateAppearance({ showClassTitle: event.target.checked })} type="checkbox" />显示“班级”标题</label> : null}</div></fieldset> : null}
       <div className="mt-5"><NameListPreview cleaning={cleaning} names={names} /></div>
     </section>
   )

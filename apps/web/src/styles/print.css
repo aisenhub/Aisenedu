@@ -26,6 +26,8 @@
 
 .label-cell-filled {
   box-sizing: border-box;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 .calibration-title,

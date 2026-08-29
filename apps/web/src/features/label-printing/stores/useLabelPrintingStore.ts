@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { asMm, type FieldErrors, type LabelAppearance, type LabelLayout, type LabelProjectDraft, type PaperSettings, type StudentName } from '../types'
+import { asMm, type FieldErrors, type LabelAppearance, type LabelLayout, type LabelProjectDraft, type LocalBackgroundImage, type PaperSettings, type StudentName } from '../types'
 import { createDefaultDraft, DEFAULT_TEMPLATE_ID, getTemplatePreset } from '../utils/templatePresets'
 
 type PrintStatus = 'idle' | 'printing' | 'error'
@@ -17,6 +17,7 @@ type LabelPrintingState = {
   updatePaper: (paper: Partial<PaperSettings>) => void
   updateLayout: (layout: Partial<LabelLayout>) => void
   updateAppearance: (appearance: Partial<LabelAppearance>) => void
+  setBackgroundImage: (image?: LocalBackgroundImage) => void
   setPreviewScale: (scale: number) => void
   setPrintStatus: (status: PrintStatus, error?: string | null) => void
   setFormErrors: (errors: FieldErrors) => void
@@ -67,6 +68,8 @@ export const useLabelPrintingStore = create<LabelPrintingState>((set) => ({
   restoreSelectedTemplateDefaults: () => set((state) => {
     const template = getTemplatePreset(state.selectedTemplateId)
     const current = state.draft
+    const previousUrl = current.appearance.backgroundImage?.objectUrl
+    if (previousUrl && typeof URL !== 'undefined') URL.revokeObjectURL(previousUrl)
     return {
       draft: {
         ...current,
@@ -84,10 +87,19 @@ export const useLabelPrintingStore = create<LabelPrintingState>((set) => ({
   updatePaper: (paper) => set((state) => ({ draft: { ...state.draft, paper: { ...state.draft.paper, ...paper } } })),
   updateLayout: (layout) => set((state) => ({ draft: { ...state.draft, layout: { ...state.draft.layout, ...layout } } })),
   updateAppearance: (appearance) => set((state) => ({ draft: { ...state.draft, appearance: { ...state.draft.appearance, ...appearance } } })),
+  setBackgroundImage: (image) => set((state) => {
+    const previousUrl = state.draft.appearance.backgroundImage?.objectUrl
+    if (previousUrl && previousUrl !== image?.objectUrl && typeof URL !== 'undefined') URL.revokeObjectURL(previousUrl)
+    return { draft: { ...state.draft, appearance: { ...state.draft.appearance, backgroundImage: image, backgroundMode: image ? 'image' : 'solid' } } }
+  }),
   setPreviewScale: (scale) => set({ previewScale: Math.min(1.2, Math.max(0.45, scale)) }),
   setPrintStatus: (status, error = null) => set({ printStatus: status, printError: error ?? null }),
   setFormErrors: (errors) => set({ formErrors: { ...errors } }),
-  resetDraft: () => set({ selectedTemplateId: DEFAULT_TEMPLATE_ID, draft: cloneDraft(initialDraft), previewScale: 0.72, printStatus: 'idle', printError: null, formErrors: {} }),
+  resetDraft: () => set((state) => {
+    const previousUrl = state.draft.appearance.backgroundImage?.objectUrl
+    if (previousUrl && typeof URL !== 'undefined') URL.revokeObjectURL(previousUrl)
+    return { selectedTemplateId: DEFAULT_TEMPLATE_ID, draft: cloneDraft(initialDraft), previewScale: 0.72, printStatus: 'idle', printError: null, formErrors: {} }
+  }),
 }))
 
 export function getFreshLabelPrintingState() {

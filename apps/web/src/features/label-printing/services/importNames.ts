@@ -94,13 +94,8 @@ export function parseCsvText(text: string): TableImportResult {
 
 async function parseXlsxFile(file: File): Promise<TableImportResult> {
   try {
-    const workbookModule = await import('xlsx')
-    const xlsx = workbookModule.default ?? workbookModule
-    const workbook = xlsx.read(await readFileArrayBuffer(file), { type: 'array', cellDates: false })
-    const firstSheetName = workbook.SheetNames[0]
-    if (!firstSheetName) return failure('empty-file', 'XLSX 中没有可读取的工作表，请检查文件后重试。')
-    const sheet = workbook.Sheets[firstSheetName]
-    const rows = xlsx.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: '' })
+    const { readSheet } = await import('read-excel-file/browser')
+    const rows = await readSheet(await readFileArrayBuffer(file), { trim: false })
     return buildTable(rows.map((row) => row.map(toCellText)))
   } catch {
     return failure('workbook-read-failed', 'XLSX 文件无法读取，请确认文件未损坏后重试。')

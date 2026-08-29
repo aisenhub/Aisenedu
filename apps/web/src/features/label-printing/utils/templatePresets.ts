@@ -50,11 +50,11 @@ export const LABEL_TEMPLATE_PRESETS: readonly LabelTemplatePreset[] = [
   },
   {
     id: 'a4-3x8-3-lines',
-    name: 'A4 · 3 列 × 8 行 · 3 行内容',
+    name: 'A4 · 3 列 × 8 行 · 双字段',
     version: 1,
     paper: A4_PORTRAIT,
     layout: makeLayout(60, 30, 3, 8, 5, 3),
-    contentCapacity: { maxLines: 3, recommendedUse: '适合姓名与两行辅助内容的后续扩展' },
+    contentCapacity: { maxLines: 2, recommendedUse: '适合班级与姓名双字段' },
     isPhysicallyVerified: false,
   },
   {
@@ -71,17 +71,22 @@ export const LABEL_TEMPLATE_PRESETS: readonly LabelTemplatePreset[] = [
 export const DEFAULT_TEMPLATE_ID = 'a4-3x8-2-lines'
 
 export const DEFAULT_APPEARANCE: LabelAppearance = {
-  fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+  fontPreset: 'systemSans',
   fontSizePt: 16,
   fontWeight: 600,
   textAlign: 'center',
-  textColor: 'var(--text)',
-  backgroundColor: 'var(--paper)',
-  borderColor: 'var(--border)',
+  textColor: '#0f172a',
+  backgroundColor: '#ffffff',
+  backgroundMode: 'solid',
+  borderColor: '#cbd5e1',
+  borderMode: 'solid',
+  gradientPalette: { start: '#2563eb', end: '#14b8a6' },
+  gradientSeed: 1,
   borderWidthMm: asMm(0.25),
   borderRadiusMm: asMm(1.5),
   paddingMm: asMm(3),
-  allowWrap: true,
+  backgroundMaskOpacity: 0,
+  backgroundMaskTone: 'light',
   showClassTitle: true,
   showNameTitle: true,
 }

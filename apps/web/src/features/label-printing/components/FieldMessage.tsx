@@ -10,7 +10,7 @@ export function HelpTip({ label, children }: Readonly<{ label: string; children:
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button aria-label={label} className="inline-flex size-8 cursor-help items-center justify-center rounded-md text-text-muted hover:bg-surface-muted focus:outline-none focus:ring-4 focus:ring-focus/25" type="button">
+        <button aria-label={label} className="inline-flex size-11 cursor-help items-center justify-center rounded-md text-text-muted hover:bg-surface-muted focus:outline-none focus:ring-4 focus:ring-focus/25" type="button">
           <Info aria-hidden="true" className="size-4" />
         </button>
       </TooltipTrigger>

@@ -54,21 +54,50 @@ export type LabelTemplatePreset = Readonly<{
   isPhysicallyVerified: boolean
 }>
 
+export type FontPreset = 'systemSans' | 'systemSerif' | 'kaiTi' | 'monospace'
+export type LabelBorderMode = 'solid' | 'randomGradient'
+export type LabelBackgroundMode = 'solid' | 'image'
+export type GradientPalette = Readonly<{ start: string; end: string }>
+export type LocalBackgroundImage = Readonly<{
+  mimeType: 'image/png' | 'image/jpeg' | 'image/webp'
+  objectUrl: string
+  naturalWidth: number
+  naturalHeight: number
+  scale: number
+  offsetX: number
+  offsetY: number
+  maskTone: 'light' | 'dark'
+  maskOpacity: number
+}>
+
 export type LabelAppearance = Readonly<{
-  fontFamily: string
+  fontPreset: FontPreset
   fontSizePt: number
   fontWeight: 400 | 500 | 600 | 700
   textAlign: 'left' | 'center' | 'right'
   textColor: string
   backgroundColor: string
+  backgroundMode: LabelBackgroundMode
+  backgroundImage?: LocalBackgroundImage
   borderColor: string
+  borderMode: LabelBorderMode
+  gradientPalette: GradientPalette
+  gradientSeed: number
   borderWidthMm: Mm
   borderRadiusMm: Mm
   paddingMm: Mm
-  allowWrap: boolean
+  backgroundMaskOpacity: number
+  backgroundMaskTone: 'light' | 'dark'
   showClassTitle: boolean
   showNameTitle: boolean
 }>
+
+export const LABEL_FONT_FAMILIES: Readonly<Record<FontPreset, string>> = {
+  systemSans: 'ui-sans-serif, system-ui, sans-serif',
+  systemSerif: 'ui-serif, Georgia, serif',
+  kaiTi: 'KaiTi, STKaiti, Kaiti SC, ui-serif, serif',
+  monospace: 'ui-monospace, SFMono-Regular, monospace',
+}
 
 export type LabelProjectDraft = Readonly<{
   names: readonly StudentName[]

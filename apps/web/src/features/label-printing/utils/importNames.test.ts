@@ -1,5 +1,16 @@
+import { strToU8, zipSync } from 'fflate'
 import { describe, expect, it } from 'vitest'
 import { cleanNamesFromTable, cleanNamesFromText, parseCsvText, parseTableFile } from '../services/importNames'
+
+function createXlsxFixture() {
+  return zipSync({
+    '[Content_Types].xml': strToU8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'),
+    '_rels/.rels': strToU8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'),
+    'xl/workbook.xml': strToU8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="名单" sheetId="1" r:id="rId1"/></sheets></workbook>'),
+    'xl/_rels/workbook.xml.rels': strToU8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'),
+    'xl/worksheets/sheet1.xml': strToU8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>姓名</t></is></c><c r="B1" t="inlineStr"><is><t>班级</t></is></c></row><row r="2"><c r="A2" t="inlineStr"><is><t>林小满</t></is></c><c r="B2" t="inlineStr"><is><t>一班</t></is></c></row></sheetData></worksheet>'),
+  })
+}
 
 describe('姓名导入与清洗', () => {
   it('支持带引号和换行的 CSV 字段', () => {
@@ -36,13 +47,8 @@ describe('姓名导入与清洗', () => {
     expect(oversizedResult).toMatchObject({ ok: false, code: 'file-too-large' })
   })
 
-  it('按需加载 XLSX 并读取第一个工作表', async () => {
-    const xlsx = await import('xlsx')
-    const workbook = xlsx.utils.book_new()
-    const sheet = xlsx.utils.aoa_to_sheet([['姓名', '班级'], ['林小满', '一班']])
-    xlsx.utils.book_append_sheet(workbook, sheet, '名单')
-    const bytes = xlsx.write(workbook, { bookType: 'xlsx', type: 'array' })
-    const result = await parseTableFile(new File([bytes], '名单.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
+  it('按需加载安全的 XLSX 解析器并读取第一个工作表', async () => {
+    const result = await parseTableFile(new File([createXlsxFixture()], '名单.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }))
     expect(result.ok).toBe(true)
     if (result.ok) expect(result.table.rows[0].values).toEqual(['林小满', '一班'])
   })
