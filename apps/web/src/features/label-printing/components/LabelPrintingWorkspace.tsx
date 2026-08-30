@@ -109,14 +109,15 @@ export function LabelPrintingWorkspace() {
 
       {showValidationAlert ? <div aria-labelledby="validation-summary-title" className="rounded-xl border border-error/25 bg-error/5 p-4 text-error" ref={validationAlertRef} role="alert" tabIndex={-1}><div className="flex items-start gap-3"><AlertTriangle aria-hidden="true" className="mt-0.5 size-5 shrink-0" /><div><h2 className="font-semibold" id="validation-summary-title">打印前需要修正以下问题</h2>{validationEntries.length > 0 ? <ul className="mt-2 space-y-1 text-sm leading-6">{validationEntries.map(([field, message]) => <li key={field}><a className="underline underline-offset-2 focus:outline-none focus:ring-2 focus:ring-focus" href={`#${FIELD_TARGETS[field] ?? 'template-heading'}`}>{message}</a></li>)}</ul> : <p className="mt-1 text-sm leading-6">请先导入至少一条姓名。</p>}</div></div></div> : null}
 
-      <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(300px,390px)_minmax(0,1fr)]">
+      <LabelWorkflowStepper activeStep={activeStep} onStepChange={setActiveStep} steps={[
+        { id: 1, title: '导入名单', summary: draft.names.length > 0 ? `${draft.names.length} 人 · ${draft.names.some((name) => name.className) ? '双字段' : '仅姓名'}` : '等待导入', state: draft.names.length > 0 ? 'complete' : activeStep === 1 ? 'current' : 'pending' },
+        { id: 2, title: '选择版式', summary: `${template.layout.columns}×${template.layout.rows} · ${template.paper.size}`, state: !validation.valid ? 'error' : activeStep === 2 ? 'current' : 'complete' },
+        { id: 3, title: '内容样式', summary: `${draft.appearance.fontPreset === 'kaiTi' ? '楷体' : draft.appearance.fontPreset === 'systemSerif' ? '衬线' : draft.appearance.fontPreset === 'monospace' ? '等宽' : '无衬线'} · ${draft.appearance.fontSizePt}pt`, state: activeStep === 3 ? 'current' : 'pending' },
+        { id: 4, title: '打印校准', summary: canPrintLabels ? `${pages.length} 页 · 可打印` : draft.names.length === 0 ? '等待名单' : validation.valid ? '准备检查' : '需要修正', state: activeStep === 4 ? 'current' : canPrintLabels ? 'complete' : 'pending' },
+      ]} />
+
+      <div className="mt-6 grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(300px,390px)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-4">
-          <LabelWorkflowStepper activeStep={activeStep} onStepChange={setActiveStep} steps={[
-            { id: 1, title: '导入名单', summary: draft.names.length > 0 ? `${draft.names.length} 人${draft.names.some((name) => name.className) ? ' · 含班级' : ''}` : '当前必做项', state: draft.names.length > 0 ? 'complete' : activeStep === 1 ? 'current' : 'pending' },
-            { id: 2, title: '标签纸与排版', summary: `${template.name.replace('A4 · ', '')}`, state: !validation.valid ? 'error' : activeStep === 2 ? 'current' : 'complete' },
-            { id: 3, title: '内容与样式', summary: `${draft.appearance.fontPreset === 'kaiTi' ? '楷体' : draft.appearance.fontPreset === 'systemSerif' ? '系统衬线' : draft.appearance.fontPreset === 'monospace' ? '等宽字体' : '系统无衬线'} · ${draft.appearance.fontSizePt}pt`, state: activeStep === 3 ? 'current' : 'pending' },
-            { id: 4, title: '校准与打印', summary: canPrintLabels ? `${pages.length} 页 · 可打印` : '待修复配置', state: activeStep === 4 ? 'current' : canPrintLabels ? 'complete' : 'pending' },
-          ]} />
           {activeStep === 1 ? <LabelImportPanel /> : null}
           {activeStep === 2 ? <LabelTemplatePanel /> : null}
           {activeStep === 3 ? <LabelContentPanel /> : null}

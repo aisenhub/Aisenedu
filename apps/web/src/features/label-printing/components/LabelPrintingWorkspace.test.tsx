@@ -19,6 +19,10 @@ describe('姓名贴工作台流程', () => {
     const user = userEvent.setup()
     renderWorkspace()
 
+    expect(screen.getByRole('heading', { name: '制作进度' })).toBeVisible()
+    expect(screen.getByText('选择版式')).toBeVisible()
+    expect(screen.getByText('内容样式')).toBeVisible()
+    expect(screen.getByText('打印校准')).toBeVisible()
     await user.type(screen.getByLabelText('粘贴或输入姓名'), '林小满\n周知行')
     await user.click(screen.getByRole('button', { name: '使用这份名单' }))
 

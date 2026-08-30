@@ -74,7 +74,7 @@ test('背景图编辑在移动端提供按钮替代并同步到打印文档', as
   await page.goto('/tools/name-labels')
   await page.getByLabel('粘贴或输入姓名').fill('林小满\n周知行')
   await page.getByRole('button', { name: '使用这份名单' }).click()
-  await page.getByRole('button', { name: /^内容与样式：/ }).click()
+  await page.getByRole('button', { name: /^内容样式：/ }).click()
   await page.getByText('高级样式', { exact: true }).click()
   await page.getByRole('combobox', { name: '标签背景类型' }).click()
   await page.getByRole('option', { name: '本地图片背景' }).click()
