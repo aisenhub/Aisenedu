@@ -1,4 +1,4 @@
-import { Check, CircleAlert } from 'lucide-react'
+import { ArrowRight, Check, CircleAlert } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { cn } from '../../../components/ui/utils'
 
@@ -45,7 +45,7 @@ export function LabelWorkflowStepper({
 
           return (
             <li className="relative min-w-0" key={step.id}>
-              {index < steps.length - 1 ? <span aria-hidden="true" className="pointer-events-none absolute left-[calc(50%+1.25rem)] right-[calc(-50%+1.25rem)] top-1/2 hidden h-px bg-border xl:block" /> : null}
+              {index < steps.length - 1 ? <span aria-hidden="true" className="pointer-events-none absolute -right-2.5 top-1/2 z-20 hidden size-5 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface-raised text-primary/60 xl:flex"><ArrowRight aria-hidden="true" className="size-3.5" strokeWidth={2} /></span> : null}
               <button
                 aria-current={step.state === 'current' ? 'step' : undefined}
                 aria-label={`${step.title}：${step.summary}，${stateLabel}`}
