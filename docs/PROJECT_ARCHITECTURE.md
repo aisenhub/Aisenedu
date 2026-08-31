@@ -116,14 +116,12 @@ Aisenedu 的首页是工具入口，不是所有工具的运行容器。首屏�
 - Button、Dialog、DropdownMenu、Tooltip、Tabs 和 Sonner 是优先使用的通用交互基础；业务规则、接口请求和角色判断放在 feature/service，不放进基础 UI。
 - 不引入第二套 UI 组件库，除非先记录依赖必要性、职责边界和长期维护成本。
 
-## 7. UI/UX 设计工作流
+## 7. UI 设计工作流
 
-所有网页 UI 相关工作必须使用已安装的 `ui-ux-pro-max` 技能：
-
-- 新页面、新模块或整体视觉方向先使用 `--design-system`，结合产品类型、用户角色、React、Tailwind 和 shadcn/ui 生成设计方向。
-- 单个组件或明确问题使用对应的 `--domain` 查询，例如 `ux`、`typography`、`color`、`react`、`icons` 或 `chart`。
-- 交付前检查可访问性、交互反馈、性能、响应式布局、排版/色彩对比、错误状态和空状态。
-- 技能建议服从 Aisenedu 的产品需求、教育场景、权限规则和现有设计系统，不自动替代这些约束。
+- 网页 UI 基于 React、Tailwind CSS 和项目内的 shadcn/ui 组件实现，不引入额外的 UI 生成技能或第二套组件库。
+- 开始实现前检查 `apps/web/src/components/ui/`、相邻 feature 和页面现有组件，优先复用已有实现。
+- 新增组件按需放入 `apps/web/src/components/ui/`，并遵循项目现有的语义 token、交互状态和响应式断点。
+- 交付 UI 前检查可访问性、交互反馈、性能、响应式布局、排版/色彩对比和错误/空状态。
 
 ## 8. Feature 模块模板
 

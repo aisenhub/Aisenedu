@@ -3,13 +3,6 @@ import { asMm, LABEL_FONT_FAMILIES, type LabelAppearance, type PageLayout } from
 import { getMaskColor, INNER_BORDER_GAP_MM, INNER_BORDER_WIDTH_MM } from '../utils/appearance'
 import { getLabelTextLayout, getSafeLineHeight } from '../utils/textFit'
 
-function getOuterBorderWidths(appearance: LabelAppearance) {
-  if (appearance.outerBorderUniform) {
-    return { topMm: appearance.borderWidthMm, rightMm: appearance.borderWidthMm, bottomMm: appearance.borderWidthMm, leftMm: appearance.borderWidthMm }
-  }
-  return appearance.outerBorderWidths
-}
-
 type LabelPageCanvasProps = Readonly<{
   page: PageLayout
   appearance: LabelAppearance
@@ -45,12 +38,11 @@ export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelP
               ? [`${appearance.showNameTitle ? '姓名：' : ''}${cell.student.value}`]
               : []
         const background = appearance.backgroundMode === 'image' ? appearance.backgroundImage : undefined
-        const outerBorderWidths = getOuterBorderWidths(appearance)
-        const effectiveOuterBorderWidths = appearance.outerBorderVisible ? outerBorderWidths : { topMm: asMm(0), rightMm: asMm(0), bottomMm: asMm(0), leftMm: asMm(0) }
-        const outerBorderInset = Math.max(effectiveOuterBorderWidths.topMm, effectiveOuterBorderWidths.rightMm, effectiveOuterBorderWidths.bottomMm, effectiveOuterBorderWidths.leftMm)
+        const effectiveOuterBorderWidth = appearance.outerBorderVisible ? appearance.borderWidthMm : asMm(0)
+        const outerBorderInset = effectiveOuterBorderWidth
         const innerBorderWidth = appearance.innerBorderVisible ? INNER_BORDER_WIDTH_MM : 0
         const innerBorderGap = appearance.outerBorderVisible && appearance.innerBorderVisible ? INNER_BORDER_GAP_MM : 0
-        const textLayout = getLabelTextLayout({ appearance, heightMm: cell.heightMm, innerBorderGapMm: innerBorderGap, innerBorderWidthMm: innerBorderWidth, lines: labelParts, outerBorderWidths: effectiveOuterBorderWidths, widthMm: cell.widthMm })
+        const textLayout = getLabelTextLayout({ appearance, heightMm: cell.heightMm, innerBorderGapMm: innerBorderGap, innerBorderWidthMm: innerBorderWidth, lines: labelParts, outerBorderWidthMm: effectiveOuterBorderWidth, widthMm: cell.widthMm })
         return (
           <div
             className="label-cell label-cell-filled"
@@ -63,7 +55,7 @@ export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelP
               boxSizing: 'border-box',
               display: 'flex',
               overflow: 'hidden',
-              padding: `${effectiveOuterBorderWidths.topMm}mm ${effectiveOuterBorderWidths.rightMm}mm ${effectiveOuterBorderWidths.bottomMm}mm ${effectiveOuterBorderWidths.leftMm}mm`,
+              padding: `${effectiveOuterBorderWidth}mm`,
             }}
           >
             <div style={{ alignSelf: 'stretch', backgroundColor: appearance.backgroundColor, borderRadius: `${Math.max(0, appearance.borderRadiusMm - outerBorderInset)}mm`, boxSizing: 'border-box', display: 'flex', flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden', padding: `${innerBorderGap}mm` }}>

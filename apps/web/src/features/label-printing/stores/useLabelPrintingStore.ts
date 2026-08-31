@@ -64,16 +64,27 @@ function createImportFieldConfigFromNames(names: readonly StudentName[]): LabelI
   }
 }
 
+function stripLegacyOuterBorderFields(appearance: unknown) {
+  if (!appearance || typeof appearance !== 'object') return appearance
+  return Object.fromEntries(Object.entries(appearance).filter(([key]) => key !== 'outerBorderUniform' && key !== 'outerBorderWidths'))
+}
+
 function migratePersistedState(persistedState: unknown, version: number) {
-  if (version >= 2 || !persistedState || typeof persistedState !== 'object') return persistedState
-  const state = persistedState as { draft?: LabelProjectDraft }
-  if (!state.draft || state.draft.importFieldConfig) return persistedState
-  const importFieldConfig = createImportFieldConfigFromNames(state.draft.names)
-  return importFieldConfig ? { ...state, draft: { ...state.draft, importFieldConfig } } : persistedState
+  if (!persistedState || typeof persistedState !== 'object') return persistedState
+  let nextState = persistedState as { draft?: LabelProjectDraft }
+  if (version < 2 && nextState.draft && !nextState.draft.importFieldConfig) {
+    const importFieldConfig = createImportFieldConfigFromNames(nextState.draft.names)
+    if (importFieldConfig) nextState = { ...nextState, draft: { ...nextState.draft, importFieldConfig } }
+  }
+  if (version < 3 && nextState.draft) {
+    nextState = { ...nextState, draft: { ...nextState.draft, appearance: stripLegacyOuterBorderFields(nextState.draft.appearance) as LabelProjectDraft['appearance'] } }
+  }
+  return nextState
 }
 
 function serializeDraft(draft: LabelProjectDraft): LabelProjectDraft {
-  const { backgroundImage, ...appearance } = draft.appearance
+  const backgroundImage = draft.appearance.backgroundImage
+  const appearance = Object.fromEntries(Object.entries(draft.appearance).filter(([key]) => key !== 'backgroundImage' && key !== 'outerBorderUniform' && key !== 'outerBorderWidths')) as Omit<LabelAppearance, 'backgroundImage'>
   return {
     names: [...draft.names],
     paper: { ...draft.paper },
@@ -146,10 +157,7 @@ export const useLabelPrintingStore = create<LabelPrintingState>()(persist((set) 
     return {
       draft: {
         ...state.draft,
-        appearance: {
-          ...DEFAULT_APPEARANCE,
-          outerBorderWidths: { ...DEFAULT_APPEARANCE.outerBorderWidths },
-        },
+        appearance: { ...DEFAULT_APPEARANCE },
       },
     }
   }),
@@ -180,7 +188,7 @@ export const useLabelPrintingStore = create<LabelPrintingState>()(persist((set) 
     draft: serializeDraft(state.draft),
   }),
   storage: createJSONStorage(() => localStorage),
-  version: 2,
+  version: 3,
   migrate: migratePersistedState,
 }))
 

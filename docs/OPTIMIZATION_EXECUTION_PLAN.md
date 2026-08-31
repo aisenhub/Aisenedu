@@ -6,7 +6,7 @@
 
 - 本轮目标是提升姓名贴工具的安全性、响应式布局、可用性、无障碍、视觉一致性、打印可靠性与性能；不得重写应用或提前实现云端名单、班级管理、学号、拼音、桌牌、单人铺满或 PDF 输出。
 - 保持 React 19、TypeScript、Vite、Tailwind CSS v4、React Router、Zustand、shadcn/ui 的技术基线；遵循项目根目录 `AGENTS.md`。
-- 所有 UI、布局、响应式、交互或可访问性工作开始前，使用 `ui-ux-pro-max` 查询对应领域，并遵循 375 / 768 / 1024 / 1440px 的验收要求。
+- 所有 UI、布局、响应式、交互或可访问性工作开始前，检查项目内已有的 shadcn/ui 组件、Tailwind token 和页面规范，并遵循 375 / 768 / 1024 / 1440px 的验收要求。
 - 新功能或新依赖必须先进行 GitHub 调研，评估维护状态、许可证、技术栈兼容性、包体积与安全性，并更新 `reference/REFERENCE_PROJECT_INDEX.md`。不复制许可证不明或不兼容的代码。
 - 学生姓名、班级、原始文件名与导入内容不得写入 URL、日志、分析事件或网络请求；当前项目草稿可通过版本化 `localStorage` 自动恢复，临时背景图片与对象 URL 不持久化。
 - 禁止通过页面根节点 `overflow-x-hidden` 掩盖布局问题；如预览需要横向查看，滚动必须只存在于明确提示的预览容器。
@@ -151,7 +151,7 @@ OPT-01、OPT-02、OPT-03、OPT-13 可以在独立工作分支并行，但不得�
 
 **实施步骤**：
 
-1. 使用 `ui-ux-pro-max --design-system` 生成方案；确认后在 `design-system/` 或 `docs/` 固化组件、间距、字体、断点与状态规范。
+1. 基于项目现有 shadcn/ui 组件、Tailwind token 和页面规范确定组件、间距、字体、断点与状态方案，并在 `design-system/` 或 `docs/` 固化重要设计决策。
 2. 定义并使用 surface、text、border、primary、danger、success、focus、阴影、圆角、间距与动效 token。
 3. 将页面中直接使用的 `slate-*`、`blue-*`、`red-*` 逐步收敛至语义 token。
 4. 本阶段明确采用浅色优先；深色模式作为独立任务，不能半实现。

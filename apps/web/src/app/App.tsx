@@ -75,7 +75,7 @@ export default function App() {
         <header className="border-b border-slate-200/80 bg-white/95">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
             <Link className="cursor-pointer text-xl font-semibold tracking-tight text-slate-950" to={HOME_ROUTE}>
-              Aisenedu
+              AisenTools
             </Link>
             <nav aria-label="主导航" className="flex items-center gap-5 text-sm font-medium">
               <Link aria-current={location.pathname === HOME_ROUTE ? 'page' : undefined} className="cursor-pointer text-slate-600 transition-colors hover:text-blue-700" to={HOME_ROUTE}>
@@ -97,7 +97,7 @@ export default function App() {
         </main>
         <footer className="border-t border-slate-200 bg-white">
           <div className="mx-auto max-w-7xl px-5 py-6 text-sm text-slate-500 sm:px-8">
-            Aisenedu · 实用工具集合
+            实用工具集合
           </div>
         </footer>
         <Toaster position="bottom-right" />

@@ -1,4 +1,4 @@
-import type { LabelAppearance, Mm, OuterBorderWidths } from '../types'
+import type { LabelAppearance, Mm } from '../types'
 import { MIN_LABEL_PADDING_MM } from './appearance'
 
 const MM_TO_PT = 72 / 25.4
@@ -29,9 +29,9 @@ function fits({ fontSizePt, heightMm, lineHeight, lines, paddingMm, widthMm }: R
   return availableWidthPt >= widestLine * fontSizePt && availableHeightPt >= Math.max(1, lines.length) * fontSizePt * lineHeight
 }
 
-export function getLabelTextLayout({ appearance, heightMm, innerBorderGapMm, innerBorderWidthMm, lines, outerBorderWidths, widthMm }: Readonly<{ appearance: LabelAppearance; heightMm: Mm; innerBorderGapMm: number; innerBorderWidthMm: number; lines: readonly string[]; outerBorderWidths: OuterBorderWidths; widthMm: Mm }>) {
-  const frameWidthMm = widthMm - outerBorderWidths.leftMm - outerBorderWidths.rightMm - innerBorderGapMm * 2
-  const frameHeightMm = heightMm - outerBorderWidths.topMm - outerBorderWidths.bottomMm - innerBorderGapMm * 2
+export function getLabelTextLayout({ appearance, heightMm, innerBorderGapMm, innerBorderWidthMm, lines, outerBorderWidthMm, widthMm }: Readonly<{ appearance: LabelAppearance; heightMm: Mm; innerBorderGapMm: number; innerBorderWidthMm: number; lines: readonly string[]; outerBorderWidthMm: Mm; widthMm: Mm }>) {
+  const frameWidthMm = widthMm - outerBorderWidthMm * 2 - innerBorderGapMm * 2
+  const frameHeightMm = heightMm - outerBorderWidthMm * 2 - innerBorderGapMm * 2
   const contentWidthMm = frameWidthMm - innerBorderWidthMm * 2
   const contentHeightMm = frameHeightMm - innerBorderWidthMm * 2
   const widestLine = Math.max(1, ...lines.map(estimateTextWidth))

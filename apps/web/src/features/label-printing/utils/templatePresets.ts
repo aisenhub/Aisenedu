@@ -72,8 +72,6 @@ export const DEFAULT_APPEARANCE: LabelAppearance = {
   backgroundMode: 'solid',
   borderColor: '#cbd5e1',
   borderWidthMm: asMm(0.25),
-  outerBorderUniform: true,
-  outerBorderWidths: { topMm: asMm(0.25), rightMm: asMm(0.25), bottomMm: asMm(0.25), leftMm: asMm(0.25) },
   outerBorderVisible: true,
   innerBorderVisible: true,
   innerBorderColor: '#94a3b8',

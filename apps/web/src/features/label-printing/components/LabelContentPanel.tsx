@@ -1,124 +1,44 @@
-import { AlignCenter, AlignLeft, AlignRight, Palette, RefreshCcw, RotateCcw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Image, Layers3, Palette, RotateCcw, Square, Type } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '../../../components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
-import type { FontPreset, LabelAppearance, OuterBorderWidths } from '../types'
-import { normalizeHexColor } from '../utils/appearance'
-import { getSafeLineHeight } from '../utils/textFit'
-import { FieldLabel, InlineFieldError } from './FieldMessage'
-import { LabelBackgroundEditor } from './LabelBackgroundEditor'
+import { AppearanceColorPresets } from './AppearanceColorPresets'
+import { AppearanceSection } from './AppearanceSection'
+import { BackgroundSettingsSection } from './BackgroundSettingsSection'
+import { InnerBorderSettingsSection } from './InnerBorderSettingsSection'
+import { OuterBorderSettingsSection } from './OuterBorderSettingsSection'
+import { TypographySettingsSection } from './TypographySettingsSection'
 
-function AppearanceNumberField({ error, id, label, max, min, onChange, step = 0.5, unit, value }: Readonly<{ error?: string; id: string; label: string; max?: number; min?: number; onChange: (value: string) => void; step?: number; unit: string; value: string }>) {
-  const errorId = `${id}-error`
-  return <div><FieldLabel htmlFor={id} label={label} /><div className="flex items-center gap-2"><input aria-describedby={error ? errorId : undefined} aria-invalid={Boolean(error)} className="min-h-11 w-full rounded-lg border border-border bg-surface-raised px-3 text-base text-text outline-none transition-colors focus:border-focus focus:ring-4 focus:ring-focus/15 aria-[invalid=true]:border-error" id={id} max={max} min={min} onChange={(event) => onChange(event.target.value)} step={step} type="number" value={value} /><span className="shrink-0 text-sm text-text-muted">{unit}</span></div><InlineFieldError id={errorId} message={error} /></div>
-}
+type AppearanceSectionId = 'typography' | 'outer-border' | 'inner-border' | 'background'
 
-const COMMON_COLOR_SWATCHES = ['#0f172a', '#1d4ed8', '#047857', '#b91c1c', '#ffffff', '#f1f5f9', '#fff7ed']
-
-function AppearanceColorField({ defaultValue, id, label, onChange, swatches = COMMON_COLOR_SWATCHES, value }: Readonly<{ defaultValue: string; id: string; label: string; onChange: (value: string) => void; swatches?: readonly string[]; value: string }>) {
-  const [draft, setDraft] = useState(value)
-  useEffect(() => setDraft(value), [value])
-  const commit = () => {
-    const next = normalizeHexColor(draft, value)
-    setDraft(next)
-    onChange(next)
-  }
-  return <div><FieldLabel htmlFor={id} label={label} /><div className="flex items-center gap-2"><input aria-label={`${label}颜色选择器`} className="size-11 cursor-pointer rounded-lg border border-border bg-surface-raised p-1" id={id} onChange={(event) => { setDraft(event.target.value); onChange(event.target.value) }} type="color" value={normalizeHexColor(value, defaultValue)} /><input aria-label={`${label} HEX 值`} className="min-h-11 min-w-0 flex-1 rounded-lg border border-border bg-surface-raised px-3 font-mono text-sm uppercase text-text outline-none focus:border-focus focus:ring-4 focus:ring-focus/15" maxLength={7} onBlur={commit} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); commit() } }} type="text" value={draft} /><Button aria-label={`恢复${label}默认值`} onClick={() => { setDraft(defaultValue); onChange(defaultValue) }} size="icon" type="button" variant="ghost"><RefreshCcw aria-hidden="true" className="size-4" /></Button></div><div aria-label={`${label}常用色`} className="mt-2 flex flex-wrap gap-2" role="group">{swatches.map((swatch) => <button aria-label={`选择${label}${swatch}`} aria-pressed={value.toLowerCase() === swatch.toLowerCase()} className="size-7 cursor-pointer rounded-full border border-border shadow-sm outline-none transition-transform hover:scale-105 focus:ring-4 focus:ring-focus/25" key={swatch} onClick={() => { setDraft(swatch); onChange(swatch) }} style={{ backgroundColor: swatch }} type="button" />)}</div></div>
-}
-
-function BorderVisibilityToggle({ description, label, onChange, value }: Readonly<{ description: string; label: string; onChange: (value: boolean) => void; value: boolean }>) {
-  return <button aria-checked={value} aria-label={`${label}显示`} className="flex min-h-14 cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised px-3 text-left outline-none transition-colors hover:border-primary/50 focus:ring-4 focus:ring-focus/25" onClick={() => onChange(!value)} role="switch" type="button"><span><span className="block text-sm font-medium text-text">{label}</span><span className="mt-0.5 block text-xs text-text-muted">{description}</span></span><span aria-hidden="true" className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${value ? 'bg-primary' : 'bg-surface-muted ring-1 ring-border'}`}><span className={`size-5 rounded-full bg-white shadow-sm transition-transform ${value ? 'translate-x-5' : 'translate-x-0.5'}`} /></span></button>
-}
-
-const appearanceDefaults = {
-  fontSizePt: { min: 8, max: 36 },
-  lineHeight: { min: 1, max: 2 },
-  borderWidthMm: { min: 0, max: 3 },
-  borderRadiusMm: { min: 0, max: 10 },
-} as const
+const FONT_NAMES = { kaiTi: '楷体', monospace: '等宽字体', systemSans: '系统无衬线', systemSerif: '系统衬线' } as const
+const ALIGN_NAMES = { center: '居中', left: '左对齐', right: '右对齐' } as const
 
 export function LabelContentPanel() {
   const appearance = useLabelPrintingStore((state) => state.draft.appearance)
   const restoreAppearanceDefaults = useLabelPrintingStore((state) => state.restoreAppearanceDefaults)
-  const updateAppearance = useLabelPrintingStore((state) => state.updateAppearance)
-  const [fontSize, setFontSize] = useState(String(appearance.fontSizePt))
-  const [lineHeight, setLineHeight] = useState(String(appearance.lineHeight))
-  const [borderWidth, setBorderWidth] = useState(String(appearance.borderWidthMm))
-  const [borderRadius, setBorderRadius] = useState(String(appearance.borderRadiusMm))
-  const currentOuterBorderWidths = appearance.outerBorderWidths ?? { topMm: appearance.borderWidthMm, rightMm: appearance.borderWidthMm, bottomMm: appearance.borderWidthMm, leftMm: appearance.borderWidthMm }
-  const [outerBorderTop, setOuterBorderTop] = useState(String(currentOuterBorderWidths.topMm))
-  const [outerBorderRight, setOuterBorderRight] = useState(String(currentOuterBorderWidths.rightMm))
-  const [outerBorderBottom, setOuterBorderBottom] = useState(String(currentOuterBorderWidths.bottomMm))
-  const [outerBorderLeft, setOuterBorderLeft] = useState(String(currentOuterBorderWidths.leftMm))
-  const [errors, setErrors] = useState<Record<string, string | undefined>>({})
+  const [openSection, setOpenSection] = useState<AppearanceSectionId | null>('typography')
 
-  useEffect(() => setFontSize(String(appearance.fontSizePt)), [appearance.fontSizePt])
-  useEffect(() => {
-    const safeLineHeight = getSafeLineHeight(appearance.lineHeight)
-    setLineHeight(String(safeLineHeight))
-    if (safeLineHeight !== appearance.lineHeight) updateAppearance({ lineHeight: safeLineHeight })
-  }, [appearance.lineHeight, updateAppearance])
-  useEffect(() => setBorderWidth(String(appearance.borderWidthMm)), [appearance.borderWidthMm])
-  useEffect(() => setBorderRadius(String(appearance.borderRadiusMm)), [appearance.borderRadiusMm])
-  useEffect(() => setOuterBorderTop(String(currentOuterBorderWidths.topMm)), [currentOuterBorderWidths.topMm])
-  useEffect(() => setOuterBorderRight(String(currentOuterBorderWidths.rightMm)), [currentOuterBorderWidths.rightMm])
-  useEffect(() => setOuterBorderBottom(String(currentOuterBorderWidths.bottomMm)), [currentOuterBorderWidths.bottomMm])
-  useEffect(() => setOuterBorderLeft(String(currentOuterBorderWidths.leftMm)), [currentOuterBorderWidths.leftMm])
-
-  const updateNumber = <K extends keyof LabelAppearance>(key: K, raw: string, setRaw: (value: string) => void, range: { min: number; max: number }) => {
-    setRaw(raw)
-    const value = Number(raw)
-    const error = raw.trim() === '' || !Number.isFinite(value) ? '请输入有效数字' : value < range.min || value > range.max ? `请输入 ${range.min}–${range.max} 范围内的数值` : undefined
-    setErrors((current) => ({ ...current, [key]: error }))
-    if (!error) updateAppearance({ [key]: value } as Partial<LabelAppearance>)
-  }
-
-  const setStyle = <K extends keyof LabelAppearance>(key: K, value: LabelAppearance[K]) => updateAppearance({ [key]: value } as Partial<LabelAppearance>)
-
-  const setOuterBorderUniform = (value: boolean) => {
-    if (value) {
-      setStyle('outerBorderUniform', true)
-      return
-    }
-    const width = appearance.borderWidthMm
-    setStyle('outerBorderUniform', false)
-    setStyle('outerBorderWidths', { topMm: width, rightMm: width, bottomMm: width, leftMm: width })
-  }
-
-  const updateOuterBorderWidth = (side: keyof OuterBorderWidths, raw: string, setRaw: (value: string) => void) => {
-    setRaw(raw)
-    const value = Number(raw)
-    const errorKey = `outerBorderWidths.${side}`
-    const error = raw.trim() === '' || !Number.isFinite(value) ? '请输入有效数字' : value < appearanceDefaults.borderWidthMm.min || value > appearanceDefaults.borderWidthMm.max ? `请输入 ${appearanceDefaults.borderWidthMm.min}–${appearanceDefaults.borderWidthMm.max} 范围内的数值` : undefined
-    setErrors((current) => ({ ...current, [errorKey]: error }))
-    if (!error) updateAppearance({ outerBorderWidths: { ...currentOuterBorderWidths, [side]: value } })
-  }
-
-  const handleRestoreAppearanceDefaults = () => {
-    restoreAppearanceDefaults()
-    setErrors({})
-  }
+  const toggleSection = (section: AppearanceSectionId) => setOpenSection((current) => current === section ? null : section)
+  const typographySummary = `${FONT_NAMES[appearance.fontPreset]} · ${appearance.fontSizePt} pt · ${ALIGN_NAMES[appearance.textAlign]}`
+  const outerBorderSummary = appearance.outerBorderVisible ? `已显示 · ${appearance.borderWidthMm} mm · 圆角 ${appearance.borderRadiusMm} mm` : '未显示'
+  const innerBorderSummary = appearance.innerBorderVisible ? `已显示 · ${appearance.innerBorderStyle === 'solid' ? '实线' : '虚线'}` : '未显示'
+  const backgroundSummary = appearance.backgroundMode === 'image' ? (appearance.backgroundImage ? `图片背景 · 遮罩 ${Math.round(appearance.backgroundImage.maskOpacity * 100)}%` : '图片背景 · 待上传') : `纯色背景 · ${appearance.backgroundColor.toUpperCase()}`
 
   return (
     <section aria-labelledby="content-heading" className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted text-text"><Palette aria-hidden="true" className="size-5" /></div><div><h2 className="text-base font-semibold text-text" id="content-heading">内容与样式</h2><p className="mt-1 text-sm leading-6 text-text-muted">姓名和班级可同时打印；样式会同时用于预览和打印。</p></div></div><Button className="shrink-0" onClick={handleRestoreAppearanceDefaults} size="sm" type="button" variant="secondary"><RotateCcw aria-hidden="true" className="size-4" />恢复默认样式</Button></div>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2"><div><FieldLabel help="只使用本机字体，不会下载字体；未检测到楷体时自动回退为系统衬线字体。" htmlFor="font-family" label="字体" /><Select onValueChange={(value) => setStyle('fontPreset', value as FontPreset)} value={appearance.fontPreset}><SelectTrigger id="font-family"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="systemSans">系统无衬线</SelectItem><SelectItem value="systemSerif">系统衬线</SelectItem><SelectItem value="kaiTi">楷体（未安装时自动回退）</SelectItem><SelectItem value="monospace">等宽字体</SelectItem></SelectContent></Select></div><AppearanceNumberField error={errors.fontSizePt} id="font-size" label="字号" max={appearanceDefaults.fontSizePt.max} min={appearanceDefaults.fontSizePt.min} onChange={(value) => updateNumber('fontSizePt', value, setFontSize, appearanceDefaults.fontSizePt)} unit="pt" value={fontSize} /></div>
-      <p className="mt-2 text-xs leading-5 text-text-muted">字号与边框独立；空间不足时先压缩文字间距至 1mm，仍放不下才自动缩小字号。</p>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2"><AppearanceNumberField error={errors.lineHeight} id="line-height" label="行间距" max={appearanceDefaults.lineHeight.max} min={appearanceDefaults.lineHeight.min} onChange={(value) => updateNumber('lineHeight', value, setLineHeight, appearanceDefaults.lineHeight)} step={0.05} unit="倍" value={lineHeight} /></div>
-      <p className="mt-2 text-xs leading-5 text-text-muted">用于调整多行内容之间的距离；数值越大，行与行之间越松。</p>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2"><div><FieldLabel htmlFor="font-weight" label="字重" /><Select onValueChange={(value) => setStyle('fontWeight', Number(value) as LabelAppearance['fontWeight'])} value={String(appearance.fontWeight)}><SelectTrigger id="font-weight"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="400">常规</SelectItem><SelectItem value="500">中等</SelectItem><SelectItem value="700">粗体</SelectItem></SelectContent></Select></div><div><FieldLabel htmlFor="text-align" label="对齐" /><Select onValueChange={(value) => setStyle('textAlign', value as LabelAppearance['textAlign'])} value={appearance.textAlign}><SelectTrigger id="text-align"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="left"><span className="inline-flex items-center gap-2"><AlignLeft aria-hidden="true" className="size-4" />左对齐</span></SelectItem><SelectItem value="center"><span className="inline-flex items-center gap-2"><AlignCenter aria-hidden="true" className="size-4" />居中</span></SelectItem><SelectItem value="right"><span className="inline-flex items-center gap-2"><AlignRight aria-hidden="true" className="size-4" />右对齐</span></SelectItem></SelectContent></Select></div></div>
-      <details className="mt-5 rounded-xl border border-border bg-surface p-4">
-        <summary className="cursor-pointer list-inside text-sm font-semibold text-text outline-none focus-visible:ring-4 focus-visible:ring-focus/25">高级样式</summary>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3"><AppearanceColorField defaultValue="#0f172a" id="text-color" label="文字颜色" onChange={(value) => setStyle('textColor', value)} value={appearance.textColor} /><AppearanceColorField defaultValue="#ffffff" id="background-color" label="标签背景" onChange={(value) => setStyle('backgroundColor', value)} value={appearance.backgroundColor} /><AppearanceColorField defaultValue="#cbd5e1" id="border-color" label="外框颜色" onChange={(value) => setStyle('borderColor', value)} value={appearance.borderColor} /></div>
-        <div className="mt-5 rounded-lg border border-border bg-surface-raised p-3"><div><p className="text-sm font-semibold text-text">边框层级</p><p className="mt-0.5 text-xs leading-5 text-text-muted">分别控制标签外框和内框是否显示。</p></div><div className="mt-3 grid gap-2 sm:grid-cols-2"><BorderVisibilityToggle description="外层色带，使用外框颜色" label="外框" onChange={(value) => setStyle('outerBorderVisible', value)} value={appearance.outerBorderVisible} /><BorderVisibilityToggle description="内层线条，可选实线或虚线" label="内框" onChange={(value) => setStyle('innerBorderVisible', value)} value={appearance.innerBorderVisible} /></div></div>
-        <div className="mt-4"><AppearanceColorField defaultValue="#94a3b8" id="inner-border-color" label="内框颜色" onChange={(value) => setStyle('innerBorderColor', value)} value={appearance.innerBorderColor} /></div>
-        <div className="mt-4"><FieldLabel htmlFor="inner-border-style" label="内框线型" /><Select onValueChange={(value) => setStyle('innerBorderStyle', value as LabelAppearance['innerBorderStyle'])} value={appearance.innerBorderStyle}><SelectTrigger id="inner-border-style"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="solid">实线</SelectItem><SelectItem value="dashed">虚线</SelectItem></SelectContent></Select></div>
-        <LabelBackgroundEditor />
-        <div className="mt-4 rounded-lg border border-border bg-surface-raised p-3"><BorderVisibilityToggle description="默认四周等宽；关闭后可分别设置四条边" label="色带四周等宽" onChange={setOuterBorderUniform} value={appearance.outerBorderUniform ?? true} />{(appearance.outerBorderUniform ?? true) ? <div className="mt-3"><AppearanceNumberField error={errors.borderWidthMm} id="border-width" label="外框宽度" max={appearanceDefaults.borderWidthMm.max} min={appearanceDefaults.borderWidthMm.min} onChange={(value) => updateNumber('borderWidthMm', value, setBorderWidth, appearanceDefaults.borderWidthMm)} unit="mm" value={borderWidth} /></div> : <div className="mt-3 grid gap-3 sm:grid-cols-2"><AppearanceNumberField error={errors['outerBorderWidths.topMm']} id="border-width-top" label="上边宽度" max={appearanceDefaults.borderWidthMm.max} min={appearanceDefaults.borderWidthMm.min} onChange={(value) => updateOuterBorderWidth('topMm', value, setOuterBorderTop)} unit="mm" value={outerBorderTop} /><AppearanceNumberField error={errors['outerBorderWidths.rightMm']} id="border-width-right" label="右边宽度" max={appearanceDefaults.borderWidthMm.max} min={appearanceDefaults.borderWidthMm.min} onChange={(value) => updateOuterBorderWidth('rightMm', value, setOuterBorderRight)} unit="mm" value={outerBorderRight} /><AppearanceNumberField error={errors['outerBorderWidths.bottomMm']} id="border-width-bottom" label="下边宽度" max={appearanceDefaults.borderWidthMm.max} min={appearanceDefaults.borderWidthMm.min} onChange={(value) => updateOuterBorderWidth('bottomMm', value, setOuterBorderBottom)} unit="mm" value={outerBorderBottom} /><AppearanceNumberField error={errors['outerBorderWidths.leftMm']} id="border-width-left" label="左边宽度" max={appearanceDefaults.borderWidthMm.max} min={appearanceDefaults.borderWidthMm.min} onChange={(value) => updateOuterBorderWidth('leftMm', value, setOuterBorderLeft)} unit="mm" value={outerBorderLeft} /></div>}</div>
-        <div className="mt-4"><AppearanceNumberField error={errors.borderRadiusMm} id="border-radius" label="圆角" max={appearanceDefaults.borderRadiusMm.max} min={appearanceDefaults.borderRadiusMm.min} onChange={(value) => updateNumber('borderRadiusMm', value, setBorderRadius, appearanceDefaults.borderRadiusMm)} unit="mm" value={borderRadius} /></div>
-        <p className="mt-2 text-xs leading-5 text-text-muted">外框宽度只改变外层色带；文字与内框之间固定保留 1mm 最小距离。</p>
-      </details>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3"><div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted text-text"><Palette aria-hidden="true" className="size-5" /></div><div><h2 className="text-base font-semibold text-text" id="content-heading">内容与样式</h2><p className="mt-1 text-sm leading-6 text-text-muted">姓名和班级可同时打印；样式会同时用于预览和打印。</p></div></div>
+        <Button className="shrink-0" onClick={() => { restoreAppearanceDefaults(); setOpenSection('typography') }} size="sm" type="button" variant="secondary"><RotateCcw aria-hidden="true" className="size-4" />恢复默认样式</Button>
+      </div>
+      <div className="mt-5"><AppearanceColorPresets /></div>
+      <div className="mt-4 space-y-3">
+        <AppearanceSection description="字体、字号、行间距、字重和文字颜色。" icon={Type} id="typography-settings" isOpen={openSection === 'typography'} onToggle={() => toggleSection('typography')} summary={typographySummary} title="字体与文字"><TypographySettingsSection /></AppearanceSection>
+        <AppearanceSection description="控制最外层色带的颜色、宽度和圆角。" icon={Square} id="outer-border-settings" isOpen={openSection === 'outer-border'} onToggle={() => toggleSection('outer-border')} summary={outerBorderSummary} title="外边框"><OuterBorderSettingsSection /></AppearanceSection>
+        <AppearanceSection description="控制标签内部的细线边界和线型。" icon={Layers3} id="inner-border-settings" isOpen={openSection === 'inner-border'} onToggle={() => toggleSection('inner-border')} summary={innerBorderSummary} title="内边框"><InnerBorderSettingsSection /></AppearanceSection>
+        <AppearanceSection description="纯色或本地图片背景，并调整遮罩和定位。" icon={Image} id="background-settings" isOpen={openSection === 'background'} onToggle={() => toggleSection('background')} summary={backgroundSummary} title="背景"><BackgroundSettingsSection /></AppearanceSection>
+      </div>
+      <p className="mt-4 text-xs leading-5 text-text-muted">所有设置会同步到预览和打印；名单与背景图片只保存在当前浏览器会话中。</p>
     </section>
   )
 }

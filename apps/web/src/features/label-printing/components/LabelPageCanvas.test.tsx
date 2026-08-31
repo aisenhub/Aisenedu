@@ -85,13 +85,13 @@ describe('姓名贴画布', () => {
     expect(lines[1]).not.toHaveTextContent('姓名：')
   })
 
-  it('关闭四周等宽后按四边宽度绘制色带', () => {
+  it('按统一外框宽度绘制四边色带', () => {
     const draft = createDefaultDraft()
     const pages = createPageLayouts([{ id: 'student-1', value: '测试姓名', className: '一年级', sourceRow: 1, duplicateCount: 1 }], draft.paper, draft.layout)
-    const appearance = { ...DEFAULT_APPEARANCE, outerBorderUniform: false, outerBorderWidths: { topMm: asMm(1), rightMm: asMm(2), bottomMm: asMm(3), leftMm: asMm(4) } }
+    const appearance = { ...DEFAULT_APPEARANCE, borderWidthMm: asMm(1) }
     const screen = render(<LabelPageCanvas appearance={appearance} page={pages[0]} screenMode />)
     const filledCell = screen.container.querySelector('.label-cell-filled') as HTMLElement
 
-    expect(filledCell.style.padding).toBe('1mm 2mm 3mm 4mm')
+    expect(filledCell.style.padding).toBe('1mm')
   })
 })

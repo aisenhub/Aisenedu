@@ -60,7 +60,6 @@ export type LabelTemplatePreset = Readonly<{
 export type FontPreset = 'systemSans' | 'systemSerif' | 'kaiTi' | 'monospace'
 export type InnerBorderStyle = 'solid' | 'dashed'
 export type LabelBackgroundMode = 'solid' | 'image'
-export type OuterBorderWidths = Readonly<{ topMm: Mm; rightMm: Mm; bottomMm: Mm; leftMm: Mm }>
 export type LocalBackgroundImage = Readonly<{
   mimeType: 'image/png' | 'image/jpeg' | 'image/webp'
   objectUrl: string
@@ -85,8 +84,6 @@ export type LabelAppearance = Readonly<{
   backgroundImage?: LocalBackgroundImage
   borderColor: string
   borderWidthMm: Mm
-  outerBorderUniform: boolean
-  outerBorderWidths: OuterBorderWidths
   outerBorderVisible: boolean
   innerBorderVisible: boolean
   innerBorderColor: string
