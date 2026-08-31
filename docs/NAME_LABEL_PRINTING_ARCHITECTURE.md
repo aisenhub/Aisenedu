@@ -16,7 +16,7 @@
 - 从导入数据中选择姓名列，并可选选择班级列；清洗空白行并提示无效项，重复内容按原样保留。
 - A4 纵向/横向模板与自定义纸张；以 mm 为单位调整页边距、标签尺寸、行列和间距。
 - 标签排版面板：用户直接设置纸张、标签尺寸、边距、间距和行列数量；不提供快捷模板选择，支持恢复默认参数。
-- 姓名贴样式：字体、字号、粗细、对齐、文字颜色、背景、边框、圆角和内边距。
+- 姓名贴样式：字体与文字、外边框、内边框、背景四类设置；颜色支持配色预设、分类色盘和 HEX 自定义。
 - 按指定起始空白标签位置排版；支持多页和打印前的实际尺寸预览。
 - 浏览器打印；打印校准页与 X/Y 偏移量。
 - 打印专用样式、键盘操作、可访问的表单错误与窄屏可用界面。
@@ -104,7 +104,7 @@
 │   ├── 页边距、标签尺寸、行列、间距
 │   └── 恢复默认参数、校准偏移量与打印兼容说明
 ├── 内容与样式面板
-│   └── 姓名/班级字段与标题开关、字体、字号、颜色、边框、圆角、对齐
+│   └── 姓名/班级字段与标题开关、字体与文字、外边框、内边框、背景
 └── 打印预览区
     ├── 页码与缩放控制（仅屏幕）
     ├── A4 实尺寸页面
@@ -259,6 +259,7 @@ type LabelTemplatePreset = {
 type LabelAppearance = {
   fontPreset: 'systemSans' | 'systemSerif' | 'kaiTi' | 'monospace'
   fontSizePt: number
+  lineHeight: number
   fontWeight: 400 | 500 | 600 | 700
   textAlign: 'left' | 'center' | 'right'
   textColor: string
@@ -267,10 +268,16 @@ type LabelAppearance = {
   backgroundImage?: { mimeType: 'image/png' | 'image/jpeg' | 'image/webp'; objectUrl: string; naturalWidth: number; naturalHeight: number; scale: number; offsetX: number; offsetY: number; maskTone: 'light' | 'dark'; maskOpacity: number }
   borderColor: string
   borderWidthMm: LengthMm
+  outerBorderVisible: boolean
+  innerBorderVisible: boolean
+  innerBorderColor: string
+  innerBorderStyle: 'solid' | 'dashed'
   borderRadiusMm: LengthMm
-  paddingMm: LengthMm
+  backgroundMaskOpacity: number
+  backgroundMaskTone: 'light' | 'dark'
   showClassTitle: boolean
   showNameTitle: boolean
+  showFieldTitles?: boolean
 }
 
 type LabelProjectDraft = {

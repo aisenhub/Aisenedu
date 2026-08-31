@@ -1,6 +1,6 @@
 # 姓名贴“内容与样式”分类重构执行计划
 
-**状态**：待实施  
+**状态**：已实施（2026-08-31）
 **范围**：`/tools/name-labels` 的“内容与样式”面板、外边框样式数据与对应预览/打印渲染。  
 **已确认的产品决定**：一次只展开一个分类；圆角归属外边框；背景图片相关能力全部保留；外边框始终四边等宽，不提供逐边配置。
 
@@ -15,6 +15,8 @@
 - 标签内容自动适配、预览缩放、浏览器打印和本地草稿保存的总体机制。
 - 背景图片上传、适应/填充、拖动定位、遮罩色调和遮罩透明度能力。
 - 不新增渐变边框、逐边内框宽度、主题皮肤或新的第三方 UI 框架。
+
+本计划已完成实现：已接入四类单开面板、五套配色预设、分类色盘、HEX 校验、低对比度提示、统一外框宽度渲染和旧版本地草稿迁移；预览与打印继续共用同一份外观配置。
 
 实现继续使用项目内 React、Tailwind CSS 与 shadcn/ui 组件源码；先复用现有 Button、Select、Tooltip、Tabs 等组件，只有现有组件确实不满足时才按项目 `AGENTS.md` 的方式补充 shadcn/ui 源码。
 
@@ -197,10 +199,17 @@ corepack pnpm --filter @aisenedu/web build
 
 ## 9. 完成定义
 
-仅当以下条件全部满足时，本计划可标记完成：
+仅当以下条件全部满足时，本计划可标记完成；本次验收已全部满足：
 
 - 用户可在字体、外边框、内边框、背景四类中清晰找到对应设置，且同一时刻只展开一类。
 - 外边框逐边设置能力和数据字段已完全移除，四边始终使用同一物理宽度。
 - 配色预设和分类色盘可用，自定义 HEX 与恢复单项默认色可用，且不破坏背景图片配置。
 - 屏幕预览、浏览器打印和本地草稿恢复一致；姓名、班级和背景图片的隐私边界不回归。
 - 自动化测试、Lint 与生产构建均有真实通过结果，相关架构文档与本文件保持一致。
+
+## 10. 本次实施记录
+
+- 新增 `AppearanceSection`、`AppearanceColorField`、`AppearanceColorPresets` 及字体、外边框、内边框、背景四个业务组件；使用项目已有 shadcn/ui 基础组件和 Tailwind 样式。
+- 删除 `LabelAppearance` 中的 `outerBorderUniform`、`outerBorderWidths`，预览与打印统一使用 `borderWidthMm`；本地持久化版本升级为 3，并过滤废弃字段。
+- `LabelBackgroundEditor` 保留图片上传、适应/填充、定位、缩放和遮罩能力，背景方式由背景分类中的 Tabs 控制。
+- 已通过：`corepack pnpm --filter @aisenedu/web lint`、`corepack pnpm --filter @aisenedu/web test`（12 个测试文件、50 个用例）和 `corepack pnpm --filter @aisenedu/web build`。

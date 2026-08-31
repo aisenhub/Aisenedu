@@ -149,7 +149,7 @@
 - Aisenedu 采用方案：保留 Web-only 初始范围；将业务模块调整为教育领域的 `auth`、`teacher`、`parent`、`student`、`course`、`assessment`、`resource` 和 `analytics`
 - 不采用内容及取舍理由：暂不引入桌面/移动端壳、视频场景引擎及 AisenLens 专属业务模块，避免超出当前教育 Web 平台范围
 
-## 2026-08-29｜UI/UX 设计与审查技能评估
+## 2026-08-29｜UI/UX 设计与审查技能历史调研（已停用）
 
 - GitHub 搜索关键词：`AI UI UX design system React Tailwind shadcn skill`、`AI frontend design review audit accessibility responsive Codex skill`
 - 搜索范围/方向：面向 React + Tailwind + shadcn/ui 的设计系统生成、UI/UX 设计指导、可访问性/响应式审查和 AI Coding Agent 技能
@@ -158,8 +158,8 @@
 - 许可证：MIT；复用其代码或文件时保留版权和许可证声明
 - 查看内容：项目 README、安装说明、设计系统生成说明、React/shadcn/ui 支持说明和许可证
 - 可复用结论：适合在新页面或新模块开始前生成产品类型匹配的布局、色彩、字体、交互和反模式检查建议；支持 React、Tailwind 和 shadcn/ui 方向
-- Aisenedu 采用方案：作为 UI 设计前置辅助，先形成页面/模块设计方向，再按 Aisenedu 的 shadcn/ui 和 Tailwind 组件规范实现；不让技能直接决定教育业务流程和权限设计
-- 不采用内容及取舍理由：不把其设计推荐当作固定视觉规范，也不整套复制其生成结果；教育产品更重视教师/家长/学生任务效率、可读性和信息密度，需要结合实际角色验证
+- Aisenedu 采用方案：不采用该技能；当前统一按 `AGENTS.md` 使用项目现有的 shadcn/ui 组件和 Tailwind token。
+- 不采用内容及取舍理由：该条目仅保留为历史调研记录，不作为后续开发指令，也不再安装或调用该技能；教育产品的最终判断以项目组件规范、可访问性标准和实际角色验证为准。
 
 ## 2026-08-29｜UI 成品审查与视觉优化技能评估
 

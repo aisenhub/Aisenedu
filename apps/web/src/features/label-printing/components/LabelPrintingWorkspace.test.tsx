@@ -125,6 +125,25 @@ describe('姓名贴工作台流程', () => {
     expect(screen.getByLabelText('行间距')).toHaveValue(1.5)
   })
 
+  it('内容样式分类一次只展开一个，并可应用配色预设', async () => {
+    const user = userEvent.setup()
+    renderWorkspace()
+
+    await user.click(screen.getByRole('button', { name: /内容样式：楷体 · 14pt/ }))
+    const typographySection = screen.getByRole('button', { name: /字体与文字/ })
+    const outerBorderSection = screen.getByRole('button', { name: /外边框/ })
+    expect(typographySection).toHaveAttribute('aria-expanded', 'true')
+
+    await user.click(outerBorderSection)
+    expect(typographySection).toHaveAttribute('aria-expanded', 'false')
+    expect(outerBorderSection).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.queryByLabelText('字号')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /薄荷清新/ }))
+    expect(useLabelPrintingStore.getState().draft.appearance.textColor).toBe('#134e4a')
+    expect(useLabelPrintingStore.getState().draft.appearance.backgroundColor).toBe('#f0fdfa')
+  })
+
   it('字段行都可删除，但至少保留一行', async () => {
     const user = userEvent.setup()
     renderWorkspace()

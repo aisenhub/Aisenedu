@@ -80,4 +80,25 @@ describe('姓名贴草稿状态', () => {
     expect(useLabelPrintingStore.getState().draft.importFieldConfig?.selectedColumnIndexes).toEqual([0, 1])
     expect(useLabelPrintingStore.getState().draft.importFieldConfig?.showTitles).toEqual([true, false])
   })
+
+  it('迁移旧版逐边外框配置，并且新保存结果不再写入废弃字段', async () => {
+    useLabelPrintingStore.getState().updateAppearance({ borderWidthMm: asMm(1) })
+    const savedProject = JSON.parse(window.localStorage.getItem(LABEL_PROJECT_STORAGE_KEY) ?? '{}')
+    savedProject.version = 2
+    savedProject.state.draft.appearance.outerBorderUniform = false
+    savedProject.state.draft.appearance.outerBorderWidths = { top: 1, right: 2, bottom: 1, left: 2 }
+
+    useLabelPrintingStore.getState().resetDraft()
+    window.localStorage.setItem(LABEL_PROJECT_STORAGE_KEY, JSON.stringify(savedProject))
+    await useLabelPrintingStore.persist.rehydrate()
+
+    const appearance = useLabelPrintingStore.getState().draft.appearance as Record<string, unknown>
+    expect(appearance).not.toHaveProperty('outerBorderUniform')
+    expect(appearance).not.toHaveProperty('outerBorderWidths')
+
+    useLabelPrintingStore.getState().updateAppearance({ borderRadiusMm: asMm(4) })
+    const nextSavedProject = JSON.parse(window.localStorage.getItem(LABEL_PROJECT_STORAGE_KEY) ?? '{}')
+    expect(nextSavedProject.state.draft.appearance).not.toHaveProperty('outerBorderUniform')
+    expect(nextSavedProject.state.draft.appearance).not.toHaveProperty('outerBorderWidths')
+  })
 })
