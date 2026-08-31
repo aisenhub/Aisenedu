@@ -64,9 +64,9 @@ export const DEFAULT_TEMPLATE_ID = 'a4-4x10-1-line'
 export const DEFAULT_APPEARANCE: LabelAppearance = {
   fontPreset: 'systemSans',
   fontSizePt: 14,
-  lineHeight: 0.75,
-  fontWeight: 700,
-  textAlign: 'center',
+  lineHeight: 1,
+  fontWeight: 500,
+  textAlign: 'left',
   textColor: '#0f172a',
   backgroundColor: '#ffffff',
   backgroundMode: 'solid',

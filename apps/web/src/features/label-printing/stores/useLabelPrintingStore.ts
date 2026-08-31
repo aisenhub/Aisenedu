@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
-import { asMm, type FieldErrors, type LabelAppearance, type LabelLayout, type LabelProjectDraft, type LocalBackgroundImage, type PaperSettings, type StudentName } from '../types'
-import { createDefaultDraft, DEFAULT_TEMPLATE_ID, getTemplatePreset } from '../utils/templatePresets'
+import { asMm, type FieldErrors, type LabelAppearance, type LabelImportFieldConfig, type LabelLayout, type LabelProjectDraft, type LocalBackgroundImage, type PaperSettings, type StudentName } from '../types'
+import { createDefaultDraft, DEFAULT_APPEARANCE, DEFAULT_TEMPLATE_ID, getTemplatePreset } from '../utils/templatePresets'
 
 export const LABEL_PROJECT_STORAGE_KEY = 'aisenedu.label-project.v1'
 
@@ -16,8 +16,10 @@ type LabelPrintingState = {
   printError: string | null
   formErrors: FieldErrors
   setNames: (names: readonly StudentName[]) => void
+  setImportFieldConfig: (config?: LabelImportFieldConfig) => void
   selectTemplate: (templateId: string) => void
   restoreSelectedTemplateDefaults: () => void
+  restoreAppearanceDefaults: () => void
   updatePaper: (paper: Partial<PaperSettings>) => void
   updateLayout: (layout: Partial<LabelLayout>) => void
   updateAppearance: (appearance: Partial<LabelAppearance>) => void
@@ -34,7 +36,40 @@ function cloneDraft(draft: LabelProjectDraft): LabelProjectDraft {
     paper: { ...draft.paper, cutStyle: draft.paper.cutStyle ?? 'none' },
     layout: { ...draft.layout },
     appearance: { ...draft.appearance },
+    ...(draft.importFieldConfig ? { importFieldConfig: cloneImportFieldConfig(draft.importFieldConfig) } : {}),
   }
+}
+
+function cloneImportFieldConfig(config: LabelImportFieldConfig): LabelImportFieldConfig {
+  return {
+    table: {
+      columns: [...config.table.columns],
+      rows: config.table.rows.map((row) => ({ ...row, values: [...row.values] })),
+    },
+    selectedColumnIndexes: [...config.selectedColumnIndexes],
+    showTitles: [...config.showTitles],
+  }
+}
+
+function createImportFieldConfigFromNames(names: readonly StudentName[]): LabelImportFieldConfig | undefined {
+  const fields = names[0]?.fields
+  if (!fields?.length) return undefined
+  return {
+    table: {
+      columns: fields.map((field) => field.label),
+      rows: names.map((name) => ({ sourceRow: name.sourceRow, values: fields.map((_, index) => name.fields?.[index]?.value ?? '') })),
+    },
+    selectedColumnIndexes: fields.map((_, index) => index),
+    showTitles: fields.map((field) => field.showTitle ?? true),
+  }
+}
+
+function migratePersistedState(persistedState: unknown, version: number) {
+  if (version >= 2 || !persistedState || typeof persistedState !== 'object') return persistedState
+  const state = persistedState as { draft?: LabelProjectDraft }
+  if (!state.draft || state.draft.importFieldConfig) return persistedState
+  const importFieldConfig = createImportFieldConfigFromNames(state.draft.names)
+  return importFieldConfig ? { ...state, draft: { ...state.draft, importFieldConfig } } : persistedState
 }
 
 function serializeDraft(draft: LabelProjectDraft): LabelProjectDraft {
@@ -47,6 +82,7 @@ function serializeDraft(draft: LabelProjectDraft): LabelProjectDraft {
       ...appearance,
       backgroundMode: backgroundImage ? 'solid' : appearance.backgroundMode,
     },
+    ...(draft.importFieldConfig ? { importFieldConfig: cloneImportFieldConfig(draft.importFieldConfig) } : {}),
   }
 }
 
@@ -65,6 +101,7 @@ export const useLabelPrintingStore = create<LabelPrintingState>()(persist((set) 
   printError: null,
   formErrors: {},
   setNames: (names) => set((state) => ({ draft: { ...state.draft, names: [...names] } })),
+  setImportFieldConfig: (config) => set((state) => ({ draft: { ...state.draft, importFieldConfig: config ? cloneImportFieldConfig(config) : undefined } })),
   selectTemplate: (templateId) => set((state) => {
     const template = getTemplatePreset(templateId)
     const current = state.draft
@@ -103,6 +140,20 @@ export const useLabelPrintingStore = create<LabelPrintingState>()(persist((set) 
       },
     }
   }),
+  restoreAppearanceDefaults: () => set((state) => {
+    const previousUrl = state.draft.appearance.backgroundImage?.objectUrl
+    if (previousUrl && typeof URL !== 'undefined') URL.revokeObjectURL(previousUrl)
+    return {
+      draft: {
+        ...state.draft,
+        appearance: {
+          ...DEFAULT_APPEARANCE,
+          gradientPalette: { ...DEFAULT_APPEARANCE.gradientPalette },
+          outerBorderWidths: { ...DEFAULT_APPEARANCE.outerBorderWidths },
+        },
+      },
+    }
+  }),
   updatePaper: (paper) => set((state) => ({ hasSelectedTemplate: true, draft: { ...state.draft, paper: { ...state.draft.paper, ...paper } } })),
   updateLayout: (layout) => set((state) => ({ hasSelectedTemplate: true, draft: { ...state.draft, layout: { ...state.draft.layout, ...layout } } })),
   updateAppearance: (appearance) => set((state) => ({ draft: { ...state.draft, appearance: { ...state.draft.appearance, ...appearance } } })),
@@ -130,7 +181,8 @@ export const useLabelPrintingStore = create<LabelPrintingState>()(persist((set) 
     draft: serializeDraft(state.draft),
   }),
   storage: createJSONStorage(() => localStorage),
-  version: 1,
+  version: 2,
+  migrate: migratePersistedState,
 }))
 
 export function getFreshLabelPrintingState() {

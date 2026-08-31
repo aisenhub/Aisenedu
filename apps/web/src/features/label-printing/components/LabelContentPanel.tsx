@@ -1,10 +1,11 @@
-import { AlignCenter, AlignLeft, AlignRight, Palette, RefreshCcw } from 'lucide-react'
+import { AlignCenter, AlignLeft, AlignRight, Palette, RefreshCcw, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '../../../components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
 import type { FontPreset, LabelAppearance, OuterBorderWidths } from '../types'
 import { normalizeHexColor } from '../utils/appearance'
+import { getSafeLineHeight } from '../utils/textFit'
 import { FieldLabel, InlineFieldError } from './FieldMessage'
 import { LabelBackgroundEditor } from './LabelBackgroundEditor'
 
@@ -39,21 +40,15 @@ function BorderVisibilityToggle({ description, label, onChange, value }: Readonl
 
 const appearanceDefaults = {
   fontSizePt: { min: 8, max: 36 },
-  lineHeight: { min: 0.1, max: 2 },
+  lineHeight: { min: 1, max: 2 },
   borderWidthMm: { min: 0, max: 3 },
   borderRadiusMm: { min: 0, max: 10 },
 } as const
 
-const STYLE_PRESETS = {
-  clear: { label: '清晰标准', fontSizePt: 14, lineHeight: 1.25, fontWeight: 700, textColor: '#0f172a', backgroundColor: '#ffffff', borderColor: '#cbd5e1' },
-  compact: { label: '紧凑标签', fontSizePt: 13, lineHeight: 1.1, fontWeight: 500, textColor: '#0f172a', backgroundColor: '#ffffff', borderColor: '#94a3b8' },
-  readable: { label: '大字易读', fontSizePt: 21, lineHeight: 1.35, fontWeight: 700, textColor: '#0f172a', backgroundColor: '#fff7ed', borderColor: '#f97316' },
-} as const
-
 export function LabelContentPanel() {
   const appearance = useLabelPrintingStore((state) => state.draft.appearance)
+  const restoreAppearanceDefaults = useLabelPrintingStore((state) => state.restoreAppearanceDefaults)
   const updateAppearance = useLabelPrintingStore((state) => state.updateAppearance)
-  const setBackgroundImage = useLabelPrintingStore((state) => state.setBackgroundImage)
   const [fontSize, setFontSize] = useState(String(appearance.fontSizePt))
   const [lineHeight, setLineHeight] = useState(String(appearance.lineHeight))
   const [borderWidth, setBorderWidth] = useState(String(appearance.borderWidthMm))
@@ -66,7 +61,11 @@ export function LabelContentPanel() {
   const [errors, setErrors] = useState<Record<string, string | undefined>>({})
 
   useEffect(() => setFontSize(String(appearance.fontSizePt)), [appearance.fontSizePt])
-  useEffect(() => setLineHeight(String(appearance.lineHeight)), [appearance.lineHeight])
+  useEffect(() => {
+    const safeLineHeight = getSafeLineHeight(appearance.lineHeight)
+    setLineHeight(String(safeLineHeight))
+    if (safeLineHeight !== appearance.lineHeight) updateAppearance({ lineHeight: safeLineHeight })
+  }, [appearance.lineHeight, updateAppearance])
   useEffect(() => setBorderWidth(String(appearance.borderWidthMm)), [appearance.borderWidthMm])
   useEffect(() => setBorderRadius(String(appearance.borderRadiusMm)), [appearance.borderRadiusMm])
   useEffect(() => setOuterBorderTop(String(currentOuterBorderWidths.topMm)), [currentOuterBorderWidths.topMm])
@@ -103,15 +102,18 @@ export function LabelContentPanel() {
     if (!error) updateAppearance({ outerBorderWidths: { ...currentOuterBorderWidths, [side]: value } })
   }
 
+  const handleRestoreAppearanceDefaults = () => {
+    restoreAppearanceDefaults()
+    setErrors({})
+  }
+
   return (
     <section aria-labelledby="content-heading" className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm">
-      <div className="flex items-start gap-3"><div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted text-text"><Palette aria-hidden="true" className="size-5" /></div><div><h2 className="text-base font-semibold text-text" id="content-heading">内容与样式</h2><p className="mt-1 text-sm leading-6 text-text-muted">姓名和班级可同时打印；样式会同时用于预览和打印。</p></div></div>
+      <div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted text-text"><Palette aria-hidden="true" className="size-5" /></div><div><h2 className="text-base font-semibold text-text" id="content-heading">内容与样式</h2><p className="mt-1 text-sm leading-6 text-text-muted">姓名和班级可同时打印；样式会同时用于预览和打印。</p></div></div><Button className="shrink-0" onClick={handleRestoreAppearanceDefaults} size="sm" type="button" variant="secondary"><RotateCcw aria-hidden="true" className="size-4" />恢复默认样式</Button></div>
       <div className="mt-5 grid gap-4 sm:grid-cols-2"><div><FieldLabel help="只使用本机字体，不会下载字体；楷体缺失时回退为衬线字体。" htmlFor="font-family" label="字体" /><Select onValueChange={(value) => setStyle('fontPreset', value as FontPreset)} value={appearance.fontPreset}><SelectTrigger id="font-family"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="systemSans">系统无衬线</SelectItem><SelectItem value="systemSerif">系统衬线</SelectItem><SelectItem value="kaiTi">楷体（依赖本机安装）</SelectItem><SelectItem value="monospace">等宽字体</SelectItem></SelectContent></Select></div><AppearanceNumberField error={errors.fontSizePt} id="font-size" label="字号" max={appearanceDefaults.fontSizePt.max} min={appearanceDefaults.fontSizePt.min} onChange={(value) => updateNumber('fontSizePt', value, setFontSize, appearanceDefaults.fontSizePt)} unit="pt" value={fontSize} /></div>
       <p className="mt-2 text-xs leading-5 text-text-muted">字号与边框独立；空间不足时先压缩文字间距至 1mm，仍放不下才自动缩小字号。</p>
       <div className="mt-4 grid gap-4 sm:grid-cols-2"><AppearanceNumberField error={errors.lineHeight} id="line-height" label="行间距" max={appearanceDefaults.lineHeight.max} min={appearanceDefaults.lineHeight.min} onChange={(value) => updateNumber('lineHeight', value, setLineHeight, appearanceDefaults.lineHeight)} step={0.05} unit="倍" value={lineHeight} /></div>
       <p className="mt-2 text-xs leading-5 text-text-muted">用于调整多行内容之间的距离；数值越大，行与行之间越松。</p>
-      <div className="mt-4 flex flex-wrap items-center gap-2"><span className="mr-1 text-xs font-semibold text-text-muted">快速预设</span>{Object.entries(STYLE_PRESETS).map(([key, preset]) => <Button key={key} onClick={() => { setBackgroundImage(undefined); updateAppearance({ fontSizePt: preset.fontSizePt, lineHeight: preset.lineHeight, fontWeight: preset.fontWeight, textColor: preset.textColor, backgroundColor: preset.backgroundColor, borderColor: preset.borderColor, borderMode: 'solid' }) }} size="sm" type="button" variant="secondary">{preset.label}</Button>)}</div>
-      <div className="mt-4 rounded-lg border border-border bg-surface px-3 py-2.5"><div className="flex min-h-11 items-center justify-between gap-3"><div><p className="text-sm font-medium text-text">显示字段标题</p><p className="mt-0.5 text-xs leading-5 text-text-muted">在姓名、班级等内容前显示字段名称</p></div><button aria-checked={appearance.showFieldTitles ?? appearance.showNameTitle} aria-label="显示字段标题" className="inline-flex min-h-11 cursor-pointer items-center rounded-md focus:outline-none focus:ring-4 focus:ring-focus/25" onClick={() => updateAppearance({ showFieldTitles: !(appearance.showFieldTitles ?? appearance.showNameTitle) })} role="switch" type="button"><span className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${appearance.showFieldTitles ?? appearance.showNameTitle ? 'bg-primary' : 'bg-surface-muted ring-1 ring-border'}`}><span className={`size-5 rounded-full bg-white shadow-sm transition-transform ${appearance.showFieldTitles ?? appearance.showNameTitle ? 'translate-x-5' : 'translate-x-0.5'}`} /></span></button></div></div>
       <div className="mt-4 grid gap-4 sm:grid-cols-2"><div><FieldLabel htmlFor="font-weight" label="字重" /><Select onValueChange={(value) => setStyle('fontWeight', Number(value) as LabelAppearance['fontWeight'])} value={String(appearance.fontWeight)}><SelectTrigger id="font-weight"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="400">常规</SelectItem><SelectItem value="500">中等</SelectItem><SelectItem value="700">粗体</SelectItem></SelectContent></Select></div><div><FieldLabel htmlFor="text-align" label="对齐" /><Select onValueChange={(value) => setStyle('textAlign', value as LabelAppearance['textAlign'])} value={appearance.textAlign}><SelectTrigger id="text-align"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="left"><span className="inline-flex items-center gap-2"><AlignLeft aria-hidden="true" className="size-4" />左对齐</span></SelectItem><SelectItem value="center"><span className="inline-flex items-center gap-2"><AlignCenter aria-hidden="true" className="size-4" />居中</span></SelectItem><SelectItem value="right"><span className="inline-flex items-center gap-2"><AlignRight aria-hidden="true" className="size-4" />右对齐</span></SelectItem></SelectContent></Select></div></div>
       <details className="mt-5 rounded-xl border border-border bg-surface p-4">
         <summary className="cursor-pointer list-inside text-sm font-semibold text-text outline-none focus-visible:ring-4 focus-visible:ring-focus/25">高级样式</summary>

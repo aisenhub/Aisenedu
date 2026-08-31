@@ -32,8 +32,8 @@ export function LabelPrintingWorkspace() {
   const printError = useLabelPrintingStore((state) => state.printError)
   const formErrors = useLabelPrintingStore((state) => state.formErrors)
   const setNames = useLabelPrintingStore((state) => state.setNames)
+  const setImportFieldConfig = useLabelPrintingStore((state) => state.setImportFieldConfig)
   const setBackgroundImage = useLabelPrintingStore((state) => state.setBackgroundImage)
-  const updateAppearance = useLabelPrintingStore((state) => state.updateAppearance)
   const setPreviewScale = useLabelPrintingStore((state) => state.setPreviewScale)
   const setPrintStatus = useLabelPrintingStore((state) => state.setPrintStatus)
   const validation = useMemo(() => validateLayout({ paper: draft.paper, layout: draft.layout }), [draft.layout, draft.paper])
@@ -80,10 +80,12 @@ export function LabelPrintingWorkspace() {
 
   const handleClearNames = () => {
     const previousNames = [...draft.names]
+    const previousImportFieldConfig = draft.importFieldConfig
     setNames([])
+    setImportFieldConfig(undefined)
     setBackgroundImage(undefined)
     setClearOpen(false)
-    toast('名单已清空', { action: { label: '撤销', onClick: () => setNames(previousNames) }, duration: 4000 })
+    toast('名单已清空', { action: { label: '撤销', onClick: () => { setNames(previousNames); setImportFieldConfig(previousImportFieldConfig) } }, duration: 4000 })
   }
 
   return (
@@ -117,7 +119,7 @@ export function LabelPrintingWorkspace() {
         <div className="min-w-0 space-y-4 lg:sticky lg:top-6">
           <section aria-labelledby="print-action-heading" className="rounded-2xl border border-primary/25 bg-primary/5 p-5 shadow-sm"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold text-primary">标签排版</p><h2 className="mt-1 text-lg font-semibold text-text" id="print-action-heading">准备好后打印姓名贴</h2><p className="mt-1 text-sm text-text-muted">{draft.names.length > 0 ? `${draft.names.length} 人 · ${pages.length} 页` : '导入名单后会显示页数和预览'}</p></div><Button disabled={!canPrintLabels || printStatus === 'printing'} onClick={handleLabelPrint} size="lg"><Printer aria-hidden="true" className="size-5" />{printStatus === 'printing' ? '正在准备打印…' : '打印姓名贴'}</Button></div><ul aria-label="打印前检查" className="mt-4 grid gap-1 text-sm text-text-muted sm:grid-cols-2"><li>{draft.names.length > 0 ? `名单：${draft.names.length} 人` : '名单：待导入'}</li><li>纸张：{draft.paper.size} · {draft.paper.orientation === 'portrait' ? '纵向' : '横向'}</li><li>页面：{pages.length} 页</li><li>{validation.valid && Object.keys(formErrors).length === 0 ? '排版参数：已通过检查' : '排版参数：待修正'}</li></ul>{!canPrintLabels ? <p className="mt-3 text-sm leading-6 text-error" role="status">{draft.names.length === 0 ? '请先进入“导入名单”添加姓名。' : '请进入“标签排版”修正参数后再打印。'}</p> : null}{printError ? <div className="mt-4 flex items-start gap-2 rounded-lg border border-error/25 bg-error/5 p-4 text-sm leading-6 text-error" role="alert"><AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />{printError}<button className="ml-auto cursor-pointer font-semibold underline underline-offset-2" onClick={() => setPrintStatus('idle')} type="button">关闭</button></div> : null}<div className="mt-4 border-t border-primary/20 pt-4"><p className="text-xs leading-5 text-text-muted">打印对话框请选择 100% 缩放，并按需开启背景图形。</p></div></section>
           <PrintPreview appearance={draft.appearance} onScaleChange={setPreviewScale} pages={pages} scale={previewScale} />
-          {hasLabelOverflow ? <section aria-labelledby="overflow-warning-title" className="rounded-xl border border-error/30 bg-error/5 p-4 text-sm leading-6 text-error"><h2 className="font-semibold" id="overflow-warning-title">部分字段可能在标签内被截断</h2><p className="mt-1">可减小字号、关闭字段标题，或在“标签排版”中调整标签尺寸与网格参数。</p><div className="mt-3 flex flex-wrap gap-2"><Button onClick={() => setActiveStep(3)} size="sm" type="button" variant="secondary">减小字号</Button><Button onClick={() => updateAppearance({ showFieldTitles: false, showClassTitle: false, showNameTitle: false })} size="sm" type="button" variant="secondary">关闭字段标题</Button><Button onClick={() => setActiveStep(2)} size="sm" type="button" variant="secondary">调整标签排版</Button></div></section> : null}
+          {hasLabelOverflow ? <section aria-labelledby="overflow-warning-title" className="rounded-xl border border-error/30 bg-error/5 p-4 text-sm leading-6 text-error"><h2 className="font-semibold" id="overflow-warning-title">部分字段可能在标签内被截断</h2><p className="mt-1">可减小字号、在“名单与导入”的字段设置中关闭不需要的标题，或调整标签尺寸与网格参数。</p><div className="mt-3 flex flex-wrap gap-2"><Button onClick={() => setActiveStep(3)} size="sm" type="button" variant="secondary">减小字号</Button><Button onClick={() => setActiveStep(1)} size="sm" type="button" variant="secondary">调整字段</Button><Button onClick={() => setActiveStep(2)} size="sm" type="button" variant="secondary">调整标签排版</Button></div></section> : null}
           <div aria-hidden="true" ref={labelPrintRef}>{canPrintLabels ? <PrintableLabelDocument appearance={draft.appearance} pages={pages} /> : null}</div>
           <div aria-hidden="true" ref={calibrationPrintRef}>{canPrintCalibration ? <PrintableCalibrationDocument layout={draft.layout} paper={draft.paper} /> : null}</div>
         </div>

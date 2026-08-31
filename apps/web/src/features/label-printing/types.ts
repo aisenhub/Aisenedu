@@ -116,6 +116,7 @@ export type LabelProjectDraft = Readonly<{
   paper: PaperSettings
   layout: LabelLayout
   appearance: LabelAppearance
+  importFieldConfig?: LabelImportFieldConfig
 }>
 
 export type LayoutCell = Readonly<{
@@ -181,6 +182,12 @@ export type ParsedTable = Readonly<{
   rows: readonly ParsedTableRow[]
 }>
 
+export type LabelImportFieldConfig = Readonly<{
+  table: ParsedTable
+  selectedColumnIndexes: readonly number[]
+  showTitles: readonly boolean[]
+}>
+
 export type ImportFailure = Readonly<{
   ok: false
   code: ImportErrorCode
@@ -211,6 +218,7 @@ export type ImportNameValue = Readonly<{
 export type ImportedFieldValue = Readonly<{
   label: string
   value: string
+  showTitle?: boolean
 }>
 
 export type LabelPrintFormState = Readonly<{

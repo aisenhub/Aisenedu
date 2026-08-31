@@ -47,4 +47,37 @@ describe('姓名贴草稿状态', () => {
     expect(next.selectedTemplateId).toBe('a4-4x10-1-line')
     expect(next.hasSelectedTemplate).toBe(true)
   })
+
+  it('保存并恢复导入字段配置', async () => {
+    const fieldConfig = {
+      table: {
+        columns: ['班级', '姓名', '座号'],
+        rows: [{ sourceRow: 2, values: ['一年级1班', '林小满', '01'] }],
+      },
+      selectedColumnIndexes: [1, 0],
+      showTitles: [false, true],
+    }
+    useLabelPrintingStore.getState().setImportFieldConfig(fieldConfig)
+    const savedProject = window.localStorage.getItem(LABEL_PROJECT_STORAGE_KEY)
+
+    useLabelPrintingStore.getState().resetDraft()
+    window.localStorage.setItem(LABEL_PROJECT_STORAGE_KEY, savedProject ?? '')
+    await useLabelPrintingStore.persist.rehydrate()
+
+    expect(useLabelPrintingStore.getState().draft.importFieldConfig).toEqual(fieldConfig)
+  })
+
+  it('从旧版多字段名单草稿迁移字段配置', async () => {
+    useLabelPrintingStore.getState().setNames([{ id: 'n-3', value: '林小满', fields: [{ label: '班级', value: '一年级1班', showTitle: true }, { label: '姓名', value: '林小满', showTitle: false }], sourceRow: 2, duplicateCount: 1 }])
+    const savedProject = JSON.parse(window.localStorage.getItem(LABEL_PROJECT_STORAGE_KEY) ?? '{}')
+    delete savedProject.state.draft.importFieldConfig
+    savedProject.version = 1
+
+    useLabelPrintingStore.getState().resetDraft()
+    window.localStorage.setItem(LABEL_PROJECT_STORAGE_KEY, JSON.stringify(savedProject))
+    await useLabelPrintingStore.persist.rehydrate()
+
+    expect(useLabelPrintingStore.getState().draft.importFieldConfig?.selectedColumnIndexes).toEqual([0, 1])
+    expect(useLabelPrintingStore.getState().draft.importFieldConfig?.showTitles).toEqual([true, false])
+  })
 })

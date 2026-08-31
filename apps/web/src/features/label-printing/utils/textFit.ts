@@ -4,6 +4,11 @@ import { MIN_LABEL_PADDING_MM } from './appearance'
 const MM_TO_PT = 72 / 25.4
 const PREFERRED_LABEL_PADDING_MM = 3
 const MIN_AUTOFIT_FONT_SIZE_PT = 8
+export const MIN_SAFE_LINE_HEIGHT = 1
+
+export function getSafeLineHeight(lineHeight: number) {
+  return Math.max(MIN_SAFE_LINE_HEIGHT, lineHeight)
+}
 
 function estimateTextWidth(text: string) {
   return Array.from(text).reduce((width, character) => {
@@ -32,8 +37,9 @@ export function getLabelTextLayout({ appearance, heightMm, innerBorderGapMm, inn
   const widestLine = Math.max(1, ...lines.map(estimateTextWidth))
   const lineCount = Math.max(1, lines.length)
   const desiredFontSizePt = appearance.fontSizePt
+  const safeLineHeight = getSafeLineHeight(appearance.lineHeight)
   const maxWidthPaddingMm = (contentWidthMm - widestLine * desiredFontSizePt / MM_TO_PT) / 2
-  const maxHeightPaddingMm = (contentHeightMm - lineCount * desiredFontSizePt * appearance.lineHeight / MM_TO_PT) / 2
+  const maxHeightPaddingMm = (contentHeightMm - lineCount * desiredFontSizePt * safeLineHeight / MM_TO_PT) / 2
   const maxPaddingMm = Math.min(maxWidthPaddingMm, maxHeightPaddingMm)
 
   if (maxPaddingMm >= MIN_LABEL_PADDING_MM) {
@@ -44,13 +50,13 @@ export function getLabelTextLayout({ appearance, heightMm, innerBorderGapMm, inn
   }
 
   const minimumPadding = MIN_LABEL_PADDING_MM
-  if (fits({ fontSizePt: desiredFontSizePt, heightMm: contentHeightMm, lineHeight: appearance.lineHeight, lines, paddingMm: minimumPadding, widthMm: contentWidthMm })) {
+  if (fits({ fontSizePt: desiredFontSizePt, heightMm: contentHeightMm, lineHeight: safeLineHeight, lines, paddingMm: minimumPadding, widthMm: contentWidthMm })) {
     return { fontSizePt: desiredFontSizePt, paddingMm: minimumPadding }
   }
 
   const availableWidthPt = Math.max(1, (contentWidthMm - minimumPadding * 2) * MM_TO_PT)
   const availableHeightPt = Math.max(1, (contentHeightMm - minimumPadding * 2) * MM_TO_PT)
-  const fittedFontSizePt = Math.min(desiredFontSizePt, availableWidthPt / widestLine, availableHeightPt / lineCount / appearance.lineHeight)
+  const fittedFontSizePt = Math.min(desiredFontSizePt, availableWidthPt / widestLine, availableHeightPt / lineCount / safeLineHeight)
 
   return {
     fontSizePt: Math.max(MIN_AUTOFIT_FONT_SIZE_PT, rounded(fittedFontSizePt)),

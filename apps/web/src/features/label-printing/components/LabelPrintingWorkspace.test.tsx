@@ -86,32 +86,43 @@ describe('姓名贴工作台流程', () => {
 
     expect(screen.getByLabelText('粘贴或输入姓名')).toHaveValue('一年级1班\t林小满\t01\n一年级1班\t周知行\t02')
     expect(screen.getByRole('button', { name: '更新名单' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: '字段设置' })).toBeVisible()
     expect(screen.getByRole('heading', { name: '当前名单' })).toBeVisible()
     expect(within(screen.getByRole('list', { name: '姓名预览' })).getByText('林小满')).toBeVisible()
     expect(within(screen.getByRole('list', { name: '姓名预览' })).getAllByText('一年级1班')).toHaveLength(2)
 
+    await user.click(screen.getByRole('button', { name: '调整字段' }))
+    expect(screen.getByRole('switch', { name: '第 2 行是否显示标题' })).toHaveAttribute('aria-checked', 'true')
+    await user.click(screen.getByRole('switch', { name: '第 2 行是否显示标题' }))
+    expect(screen.getByRole('button', { name: '更新字段' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: '更新字段' }))
+    expect(screen.getByRole('heading', { name: '字段设置' })).toBeVisible()
+    expect(useLabelPrintingStore.getState().draft.names[0]?.fields?.[1]?.showTitle).toBe(false)
+
     await user.click(screen.getByRole('button', { name: '更新名单' }))
     expect(useLabelPrintingStore.getState().draft.names[0]?.fields).toEqual([
-      { label: '班级', value: '一年级1班' },
-      { label: '姓名', value: '林小满' },
-      { label: '座号', value: '01' },
+      { label: '班级', value: '一年级1班', showTitle: true },
+      { label: '姓名', value: '林小满', showTitle: false },
+      { label: '座号', value: '01', showTitle: true },
     ])
 
     await user.click(screen.getByRole('button', { name: /内容样式：无衬线 · 14pt，待处理/ }))
     const fontWeight = screen.getByRole('combobox', { name: '字重' })
-    expect(fontWeight).toHaveTextContent('粗体')
-    const titleSwitch = screen.getByRole('switch', { name: '显示字段标题' })
-    expect(titleSwitch).toHaveAttribute('aria-checked', 'true')
-    await user.click(titleSwitch)
-    expect(titleSwitch).toHaveAttribute('aria-checked', 'false')
-
+    expect(fontWeight).toHaveTextContent('中等')
+    expect(screen.getByRole('combobox', { name: '对齐' })).toHaveTextContent('左对齐')
     const lineHeight = screen.getByLabelText('行间距')
-    expect(lineHeight).toHaveAttribute('min', '0.1')
-    expect(lineHeight).toHaveValue(0.75)
+    expect(lineHeight).toHaveAttribute('min', '1')
+    expect(lineHeight).toHaveValue(1)
     await user.clear(lineHeight)
     await user.type(lineHeight, '1.5')
     expect(lineHeight).toHaveValue(1.5)
     expect(useLabelPrintingStore.getState().draft.appearance.lineHeight).toBe(1.5)
+
+    await user.click(screen.getByRole('button', { name: '恢复默认样式' }))
+    expect(useLabelPrintingStore.getState().draft.appearance.fontSizePt).toBe(14)
+    expect(useLabelPrintingStore.getState().draft.appearance.lineHeight).toBe(1)
+    expect(useLabelPrintingStore.getState().draft.names[0]?.fields?.[1]?.showTitle).toBe(false)
+    expect(screen.getByLabelText('行间距')).toHaveValue(1)
   })
 
   it('字段行都可删除，但至少保留一行', async () => {
@@ -140,6 +151,7 @@ describe('姓名贴工作台流程', () => {
     await user.click(within(dialog).getByRole('button', { name: '清空名单' }))
     expect(within(screen.getByLabelText('当前工作台状态')).getByText('0 人')).toBeVisible()
     expect(useLabelPrintingStore.getState().draft.names).toEqual([])
+    expect(screen.getByLabelText('粘贴或输入姓名')).toHaveValue('')
     expect(JSON.parse(window.localStorage.getItem('aisenedu.label-project.v1') ?? '{}').state.draft.names).toEqual([])
     expect(window.sessionStorage.length).toBe(0)
   })

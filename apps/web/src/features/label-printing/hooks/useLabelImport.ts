@@ -1,16 +1,33 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
 import { cleanNamesFromTable, cleanNamesFromText, parseTableFile } from '../services/importNames'
-import type { NameCleaningResult, ParsedTable, TableImportResult } from '../types'
+import type { LabelImportFieldConfig, NameCleaningResult, ParsedTable, TableImportResult } from '../types'
 
 type ImportStatus = 'idle' | 'parsing' | 'select-column' | 'ready' | 'error'
 
+function applyFieldTitleSettings(result: NameCleaningResult, showTitles: readonly boolean[]) {
+  if (showTitles.length === 0) return result
+  return {
+    ...result,
+    names: result.names.map((name) => ({
+      ...name,
+      fields: name.fields?.map((field, index) => ({ ...field, showTitle: showTitles[index] ?? true })),
+    })),
+  }
+}
+
 export function useLabelImport() {
   const setNames = useLabelPrintingStore((state) => state.setNames)
+  const setImportFieldConfig = useLabelPrintingStore((state) => state.setImportFieldConfig)
+  const storedImportFieldConfig = useLabelPrintingStore((state) => state.draft.importFieldConfig)
   const [status, setStatus] = useState<ImportStatus>('idle')
-  const [table, setTable] = useState<ParsedTable | null>(null)
+  const [table, setTable] = useState<ParsedTable | null>(() => storedImportFieldConfig?.table ?? null)
   const [error, setError] = useState<string | null>(null)
   const [cleaning, setCleaning] = useState<NameCleaningResult | null>(null)
+
+  useEffect(() => {
+    if (!table && storedImportFieldConfig?.table) setTable(storedImportFieldConfig.table)
+  }, [storedImportFieldConfig?.table, table])
 
   const applyCleaning = useCallback((result: NameCleaningResult) => {
     setCleaning(result)
@@ -30,13 +47,15 @@ export function useLabelImport() {
     return true
   }, [setNames])
 
-  const importText = useCallback((text: string, fieldLabels: readonly string[] = []) => {
-    const result = cleanNamesFromText(text, fieldLabels)
+  const importText = useCallback((text: string, fieldLabels: readonly string[] = [], showTitles: readonly boolean[] = []) => {
+    const result = applyFieldTitleSettings(cleanNamesFromText(text, fieldLabels), showTitles)
     applyCleaning(result)
     setTable(null)
-  }, [applyCleaning])
+    setImportFieldConfig(undefined)
+  }, [applyCleaning, setImportFieldConfig])
 
   const importFile = useCallback(async (file: File) => {
+    setImportFieldConfig(undefined)
     setStatus('parsing')
     setError(null)
     setCleaning(null)
@@ -50,25 +69,28 @@ export function useLabelImport() {
     setTable(result.table)
     setStatus('select-column')
     return true
-  }, [])
+  }, [setImportFieldConfig])
 
-  const selectColumns = useCallback((selectedColumnIndexes: readonly number[]): NameCleaningResult | false => {
+  const selectColumns = useCallback((selectedColumnIndexes: readonly number[], showTitles: readonly boolean[] = []): NameCleaningResult | false => {
     const uniqueIndexes = new Set(selectedColumnIndexes)
     if (!table || selectedColumnIndexes.length === 0 || selectedColumnIndexes.some((index) => index < 0 || index >= table.columns.length) || uniqueIndexes.size !== selectedColumnIndexes.length) {
       setStatus('error')
       setError('请至少选择一个字段，并确保每个字段只选择一次。')
       return false
     }
-    const result = cleanNamesFromTable(table, selectedColumnIndexes)
-    return applyCleaning(result) ? result : false
-  }, [applyCleaning, table])
+    const result = applyFieldTitleSettings(cleanNamesFromTable(table, selectedColumnIndexes), showTitles)
+    if (!applyCleaning(result)) return false
+    setImportFieldConfig({ table, selectedColumnIndexes: [...selectedColumnIndexes], showTitles: [...showTitles] } satisfies LabelImportFieldConfig)
+    return result
+  }, [applyCleaning, setImportFieldConfig, table])
 
   const cancelTable = useCallback(() => {
     setTable(null)
+    setImportFieldConfig(undefined)
     setStatus('idle')
     setError(null)
     setCleaning(null)
-  }, [])
+  }, [setImportFieldConfig])
 
   return { status, table, error, cleaning, importText, importFile, selectColumns, cancelTable }
 }

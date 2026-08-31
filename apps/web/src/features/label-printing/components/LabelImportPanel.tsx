@@ -1,5 +1,5 @@
-import { ClipboardX, FileSpreadsheet, FileText, LoaderCircle, Upload } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { ClipboardX, FileSpreadsheet, FileText, LoaderCircle, Settings2, Upload } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../../components/ui/button'
 import { useLabelImport } from '../hooks/useLabelImport'
 import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
@@ -17,16 +17,43 @@ function namesToText(names: readonly StudentName[]) {
 
 export function LabelImportPanel({ onClearRequest }: LabelImportPanelProps) {
   const names = useLabelPrintingStore((state) => state.draft.names)
+  const importFieldConfig = useLabelPrintingStore((state) => state.draft.importFieldConfig)
   const [text, setText] = useState(() => namesToText(names))
   const [textFieldLabels, setTextFieldLabels] = useState<readonly string[]>(() => names[0]?.fields?.map((field) => field.label) ?? [])
   const [hasConfirmedFile, setHasConfirmedFile] = useState(() => names.some((name) => Boolean(name.fields?.length)))
+  const [isEditingFields, setIsEditingFields] = useState(false)
+  const [selectedColumnIndexes, setSelectedColumnIndexes] = useState<readonly number[]>(() => importFieldConfig?.selectedColumnIndexes ?? [])
+  const [selectedFieldTitles, setSelectedFieldTitles] = useState<readonly boolean[]>(() => importFieldConfig?.showTitles ?? [])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const previousNameCountRef = useRef(names.length)
   const { cancelTable, cleaning, error, importFile, importText, selectColumns, status, table } = useLabelImport()
 
-  const handleColumnSelect = (columnIndexes: readonly number[]) => {
-    const result = selectColumns(columnIndexes)
+  useEffect(() => {
+    const previousNameCount = previousNameCountRef.current
+    if (previousNameCount > 0 && names.length === 0) {
+      setText('')
+      setTextFieldLabels([])
+      setHasConfirmedFile(false)
+      setIsEditingFields(false)
+      setSelectedColumnIndexes([])
+      setSelectedFieldTitles([])
+      cancelTable()
+    }
+    if (previousNameCount === 0 && names.length > 0 && text === '') {
+      setText(namesToText(names))
+      setTextFieldLabels(names[0]?.fields?.map((field) => field.label) ?? [])
+      setHasConfirmedFile(names.some((name) => Boolean(name.fields?.length)))
+    }
+    previousNameCountRef.current = names.length
+  }, [cancelTable, names, text])
+
+  const handleColumnSelect = (columnIndexes: readonly number[], showTitles: readonly boolean[]) => {
+    const result = selectColumns(columnIndexes, showTitles)
     if (result) {
       setHasConfirmedFile(true)
+      setIsEditingFields(false)
+      setSelectedColumnIndexes(columnIndexes)
+      setSelectedFieldTitles(showTitles)
       setTextFieldLabels(result.names[0]?.fields?.map((field) => field.label) ?? [])
       setText(namesToText(result.names))
     }
@@ -35,8 +62,24 @@ export function LabelImportPanel({ onClearRequest }: LabelImportPanelProps) {
 
   const handleFileImport = async (file: File) => {
     setHasConfirmedFile(false)
+    setIsEditingFields(false)
+    setSelectedColumnIndexes([])
+    setSelectedFieldTitles([])
     return importFile(file)
   }
+
+  const handleCancelColumnSelection = () => {
+    if (isEditingFields) {
+      setIsEditingFields(false)
+      return
+    }
+    cancelTable()
+  }
+
+  const selectedFieldLabels = selectedColumnIndexes
+    .map((columnIndex) => table?.columns[columnIndex])
+    .filter((column): column is string => Boolean(column))
+  const isSelectingColumns = Boolean(table) && (status === 'select-column' || isEditingFields)
 
   return (
     <section aria-labelledby="import-heading" className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm lg:flex lg:h-full lg:min-h-0 lg:flex-col">
@@ -60,15 +103,16 @@ export function LabelImportPanel({ onClearRequest }: LabelImportPanelProps) {
       <p className="mt-2 text-xs leading-5 text-text-muted" id="names-help">支持多行粘贴；按 Tab 插入列分隔符，空行会移除，重复内容也会按原样保留。</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="secondary"><Upload aria-hidden="true" className="size-4" />导入</Button>
-        <Button onClick={() => importText(text, textFieldLabels)} size="sm" variant="secondary"><FileText aria-hidden="true" className="size-4" />{hasConfirmedFile ? '更新名单' : '使用这份名单'}</Button>
+        <Button onClick={() => importText(text, textFieldLabels, selectedFieldTitles)} size="sm" variant="secondary"><FileText aria-hidden="true" className="size-4" />{hasConfirmedFile ? '更新名单' : '使用这份名单'}</Button>
         <Button disabled={names.length === 0} onClick={onClearRequest} size="sm" variant="danger"><ClipboardX aria-hidden="true" className="size-4" />清空名单</Button>
         <input accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="sr-only" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleFileImport(file); event.target.value = '' }} ref={fileInputRef} type="file" />
       </div>
       <div className="mt-3 flex flex-wrap gap-3 text-xs text-text-muted"><span className="inline-flex items-center gap-1.5"><FileText aria-hidden="true" className="size-3.5" />多行文本</span><span className="inline-flex items-center gap-1.5"><FileSpreadsheet aria-hidden="true" className="size-3.5" />UTF-8 CSV / XLSX</span></div>
       {status === 'parsing' ? <div aria-live="polite" className="mt-4 flex items-center gap-2 text-sm text-text-muted" role="status"><LoaderCircle aria-hidden="true" className="size-4 animate-spin" />正在读取文件，文件不会离开浏览器…</div> : null}
       {error ? <p className="mt-4 rounded-lg border border-error/25 bg-error/5 px-3 py-2 text-sm leading-6 text-error" role="alert">{error}</p> : null}
-      {table && status === 'select-column' ? <NameColumnPicker onCancel={cancelTable} onSelect={handleColumnSelect} table={table} /> : null}
-      {status !== 'select-column' ? <div className="mt-5 lg:min-h-0 lg:flex-1"><NameListPreview cleaning={cleaning} names={names} /></div> : null}
+      {isSelectingColumns && table ? <NameColumnPicker confirmLabel={hasConfirmedFile ? '更新字段' : '确认字段选择'} initialSelectedColumns={selectedColumnIndexes} initialShowTitles={selectedFieldTitles} onCancel={handleCancelColumnSelection} onSelect={handleColumnSelect} table={table} /> : null}
+      {table && hasConfirmedFile && !isEditingFields ? <div className="mt-4 rounded-xl border border-border bg-surface px-4 py-3"><div className="flex flex-wrap items-center justify-between gap-3"><div className="min-w-0"><h3 className="text-sm font-semibold text-text">字段设置</h3><p className="mt-1 text-xs leading-5 text-text-muted">当前标签显示：{selectedFieldLabels.join('、')}</p></div><Button onClick={() => setIsEditingFields(true)} size="sm" variant="secondary"><Settings2 aria-hidden="true" className="size-4" />调整字段</Button></div></div> : null}
+      {!isSelectingColumns ? <div className="mt-5 lg:min-h-0 lg:flex-1"><NameListPreview cleaning={cleaning} names={names} /></div> : null}
     </section>
   )
 }

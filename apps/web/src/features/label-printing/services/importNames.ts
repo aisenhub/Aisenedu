@@ -130,7 +130,7 @@ export function cleanNameValues(values: readonly ImportNameValue[]): NameCleanin
     .map((item) => item.sourceRow)
   const cleanItems = values
     .map((item) => {
-      const fields = item.fields?.map((field) => ({ label: cleanValue(field.label) || '未命名字段', value: cleanValue(field.value) }))
+      const fields = item.fields?.map((field) => ({ label: cleanValue(field.label) || '未命名字段', value: cleanValue(field.value), showTitle: field.showTitle ?? true }))
       return { ...item, value: cleanValue(item.value), className: cleanValue(item.className ?? '') || undefined, ...(fields && fields.length > 0 ? { fields } : {}) }
     })
     .filter((item) => item.value !== '' && [...item.value].length <= IMPORT_LIMITS.maxNameCharacters && [...(item.className ?? '')].length <= IMPORT_LIMITS.maxNameCharacters && !item.fields?.some((field) => [...field.value].length > IMPORT_LIMITS.maxNameCharacters))
@@ -155,6 +155,7 @@ export function cleanNamesFromText(text: string, fieldLabels: readonly string[] 
     const fields = Array.from({ length: fieldCount }, (_, columnIndex) => ({
       label: fieldLabels[columnIndex] ?? `字段 ${columnIndex + 1}`,
       value: values[columnIndex] ?? '',
+      showTitle: true,
     }))
     return { value: values[0] ?? '', fields, sourceRow: index + 1 }
   }))
@@ -169,7 +170,7 @@ export function cleanNamesFromTable(table: ParsedTable, nameColumnIndexOrIndexes
   return cleanNameValues(table.rows.map((row) => ({
     value: row.values[nameColumnIndex] ?? '',
     ...(resolvedClassColumnIndex !== undefined ? { className: row.values[resolvedClassColumnIndex] ?? '' } : {}),
-    fields: columnIndexes.map((columnIndex) => ({ label: table.columns[columnIndex] ?? `第 ${columnIndex + 1} 列`, value: row.values[columnIndex] ?? '' })),
+    fields: columnIndexes.map((columnIndex) => ({ label: table.columns[columnIndex] ?? `第 ${columnIndex + 1} 列`, value: row.values[columnIndex] ?? '', showTitle: true })),
     sourceRow: row.sourceRow,
   })))
 }

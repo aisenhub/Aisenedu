@@ -14,7 +14,17 @@ describe('姓名贴画布', () => {
     const print = render(<LabelPageCanvas appearance={appearance} page={pages[0]} />)
     expect(screen.container.querySelector('img')?.getAttribute('src')).toBe('blob:http://localhost/background')
     expect(print.container.querySelector('img')?.getAttribute('src')).toBe(screen.container.querySelector('img')?.getAttribute('src'))
-    expect(screen.container.querySelectorAll('.label-text br')).toHaveLength(1)
+    expect(screen.container.querySelectorAll('.label-text br')).toHaveLength(0)
+  })
+
+  it('行间距低于安全值时保持字形完整且不插入额外换行', () => {
+    const draft = createDefaultDraft()
+    const pages = createPageLayouts([{ id: 'student-1', value: '测试姓名', className: '一年级', sourceRow: 1, duplicateCount: 1 }], draft.paper, draft.layout)
+    const screen = render(<LabelPageCanvas appearance={{ ...DEFAULT_APPEARANCE, lineHeight: 0.75 }} page={pages[0]} screenMode />)
+    const innerFrame = screen.container.querySelector('.label-cell-filled')?.firstElementChild?.firstElementChild as HTMLElement
+
+    expect(innerFrame.style.lineHeight).toBe('1')
+    expect(screen.container.querySelectorAll('.label-text br')).toHaveLength(0)
   })
 
   it('按外框和内框设置绘制双层边框', () => {
@@ -61,7 +71,18 @@ describe('姓名贴画布', () => {
     expect(lines).toHaveLength(2)
     expect(lines[0]).toHaveTextContent('姓名：')
     expect(lines[1]).toHaveTextContent('班级：六(7)班')
-    expect(screen.container.querySelectorAll('.label-text br')).toHaveLength(1)
+    expect(screen.container.querySelectorAll('.label-text br')).toHaveLength(0)
+  })
+
+  it('按字段分别显示或隐藏字段标题', () => {
+    const draft = createDefaultDraft()
+    const pages = createPageLayouts([{ id: 'student-1', value: '林小满', fields: [{ label: '班级', value: '一年级1班', showTitle: true }, { label: '姓名', value: '林小满', showTitle: false }], sourceRow: 1, duplicateCount: 1 }], draft.paper, draft.layout)
+    const screen = render(<LabelPageCanvas appearance={DEFAULT_APPEARANCE} page={pages[0]} screenMode />)
+    const lines = screen.container.querySelectorAll('.label-text > span')
+
+    expect(lines[0]).toHaveTextContent('班级：一年级1班')
+    expect(lines[1]).toHaveTextContent('林小满')
+    expect(lines[1]).not.toHaveTextContent('姓名：')
   })
 
   it('关闭四周等宽后按四边宽度绘制色带', () => {
