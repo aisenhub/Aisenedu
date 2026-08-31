@@ -27,4 +27,16 @@ describe('姓名贴模板预设', () => {
   it('默认使用楷体', () => {
     expect(DEFAULT_APPEARANCE.fontPreset).toBe('kaiTi')
   })
+
+  it('默认外框宽度为 1 mm', () => {
+    expect(DEFAULT_APPEARANCE.borderWidthMm).toBe(1)
+  })
+
+  it('默认圆角为 0 mm', () => {
+    expect(DEFAULT_APPEARANCE.borderRadiusMm).toBe(0)
+  })
+
+  it('默认内框线型为虚线', () => {
+    expect(DEFAULT_APPEARANCE.innerBorderStyle).toBe('dashed')
+  })
 })
