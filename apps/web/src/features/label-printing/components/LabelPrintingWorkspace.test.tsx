@@ -107,7 +107,7 @@ describe('姓名贴工作台流程', () => {
 
     const lineHeight = screen.getByLabelText('行间距')
     expect(lineHeight).toHaveAttribute('min', '0.1')
-    expect(lineHeight).toHaveValue(1.25)
+    expect(lineHeight).toHaveValue(0.75)
     await user.clear(lineHeight)
     await user.type(lineHeight, '1.5')
     expect(lineHeight).toHaveValue(1.5)
