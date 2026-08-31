@@ -212,4 +212,5 @@ corepack pnpm --filter @aisenedu/web build
 - 新增 `AppearanceSection`、`AppearanceColorField`、`AppearanceColorPresets` 及字体、外边框、内边框、背景四个业务组件；使用项目已有 shadcn/ui 基础组件和 Tailwind 样式。
 - 删除 `LabelAppearance` 中的 `outerBorderUniform`、`outerBorderWidths`，预览与打印统一使用 `borderWidthMm`；本地持久化版本升级为 3，并过滤废弃字段。
 - `LabelBackgroundEditor` 保留图片上传、适应/填充、定位、缩放和遮罩能力，背景方式由背景分类中的 Tabs 控制。
-- 已通过：`corepack pnpm --filter @aisenedu/web lint`、`corepack pnpm --filter @aisenedu/web test`（12 个测试文件、50 个用例）和 `corepack pnpm --filter @aisenedu/web build`。
+- 已通过：`corepack pnpm --filter @aisenedu/web lint`、`corepack pnpm --filter @aisenedu/web test`（12 个测试文件、50 个用例）、`corepack pnpm --filter @aisenedu/web test:e2e`（5 个用例）和 `corepack pnpm --filter @aisenedu/web build`。
+- 浏览器手工验收已覆盖 375、768、1024、1440 px 视口：页面无意横向溢出，分类单开、配色预设、背景 Tabs 和打印比例预览均可正常操作；临时视口已恢复。

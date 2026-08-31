@@ -35,8 +35,8 @@
 | OPT-15 导入区字段标题与单行字段规则 | 已完成 | 2026-08-29 | 标题控制已移至文本导入和 CSV/XLSX 列确认区域；班级/姓名固定独立行，长内容省略并保留 title；移除组件 `maxLines` 截断入口。 |
 | OPT-18 工作流布局与单主滚动重构 | 已完成 | 2026-08-29 | 新增 `LabelWorkflowStepper`；手机 2×2 步骤、平板单列、桌面无左栏独立纵向滚动；可回跳且草稿不重置。 |
 | OPT-16 本地背景图编辑器与打印一致性 | 已完成 | 2026-08-29 | 支持 PNG/JPEG/WebP、5MB/像素限制、Pointer Events 拖动、等比缩放、按钮/滑块替代、遮罩；预览/打印共享 `LabelPageCanvas`，替换/恢复/卸载释放 object URL。 |
-| OPT-17 样式、背景与打印回归测试 | 已完成 | 2026-08-29 | 外观色值、统一外框、配置白名单、大名单、固定字段行、背景图打印同步、工作台/CSV/响应式/打印前状态测试通过；`test` 与 `test:e2e` 均通过。 |
-| OPT-12 最终回归、文档与交付 | 已完成 | 2026-08-29 | `corepack pnpm test`、`corepack pnpm test:e2e`、`corepack pnpm build`、`corepack pnpm lint` 和 `git diff --check` 通过；真实打印机偏差仍需用户环境校准。 |
+| OPT-17 样式、背景与打印回归测试 | 已完成 | 2026-08-31 | 外观色值、统一外框、配置白名单、大名单、固定字段行、背景图打印同步、工作台/CSV/响应式/打印前状态测试通过；当前 `test` 50 项、`test:e2e` 5 项均通过。 |
+| OPT-12 最终回归、文档与交付 | 已完成 | 2026-08-31 | 当前 `corepack pnpm --filter @aisenedu/web test`、`test:e2e`、`build`、`lint` 和 `git diff --check` 通过；真实打印机偏差仍需用户环境校准。 |
 
 ### 状态更新规则
 

@@ -27,7 +27,7 @@ export function LabelContentPanel() {
 
   return (
     <section aria-labelledby="content-heading" className="rounded-2xl border border-border bg-surface-raised p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3"><div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-surface-muted text-text"><Palette aria-hidden="true" className="size-5" /></div><div><h2 className="text-base font-semibold text-text" id="content-heading">内容与样式</h2><p className="mt-1 text-sm leading-6 text-text-muted">姓名和班级可同时打印；样式会同时用于预览和打印。</p></div></div>
         <Button className="shrink-0" onClick={() => { restoreAppearanceDefaults(); setOpenSection('typography') }} size="sm" type="button" variant="secondary"><RotateCcw aria-hidden="true" className="size-4" />恢复默认样式</Button>
       </div>
