@@ -188,7 +188,7 @@ corepack pnpm lint
 
 ## 13. 首个工具的加载、依赖与隐私记录
 
-当前首个工具为 `/tools/name-labels` 学生姓名贴，页面通过路由级 `React.lazy` 加载。首页只加载应用壳、导航和轻量工具入口；姓名贴页面进入后才加载其 feature chunk。用户选择 XLSX 文件后才动态加载 `read-excel-file@9.3.10` 的浏览器入口；生产构建中的 XLSX 解析依赖不进入首页首屏 chunk。打印功能使用 `react-to-print@3.3.0`，只接收专用可打印文档 ref，不引入 jsPDF。
+当前首个工具为 `/tools/name-labels` 学生姓名贴，页面通过路由级 `React.lazy` 加载。首页只加载应用壳、导航和轻量工具入口；姓名贴页面进入后才加载其 feature chunk。用户选择 XLSX 文件后才动态加载 `read-excel-file@9.3.10` 的兼容入口和浏览器入口，前者失败后再尝试后者；生产构建中的 XLSX 解析依赖不进入首页首屏 chunk。打印功能使用 `react-to-print@3.3.0`，只接收专用可打印文档 ref，不引入 jsPDF。
 
 姓名、原始文件名和表格内容只在当前页面内存中处理；当前实现没有持久化 middleware、网络上传、分析事件、日志输出或 URL 编码。导入服务在读取前检查 5MB 文件上限，并限制 10,000 行、100 列和 80 个 Unicode 字符的姓名长度。XLSX 解析失败、格式不支持、超限和列选择取消均保留原有草稿。
 

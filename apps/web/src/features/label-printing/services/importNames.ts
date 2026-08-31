@@ -54,6 +54,18 @@ function buildTable(rows: readonly (readonly string[])[]): TableImportResult {
   return { ok: true, table: { columns, rows: tableRows } satisfies ParsedTable }
 }
 
+function getErrorText(error: unknown) {
+  return error instanceof Error ? `${error.name} ${error.message}` : String(error)
+}
+
+function getXlsxFailureMessage(errors: readonly unknown[]) {
+  const text = errors.map(getErrorText).join(' ')
+  if (/legacy.*\.xls|only.*\.xlsx/i.test(text)) return '该文件不是标准 .xlsx 工作簿，请在 Excel 中另存为“Excel 工作簿（.xlsx）”后重试。'
+  if (/invalid zip|doesn't look like|not.*xlsx|file not found inside/i.test(text)) return '文件不是有效的 .xlsx 工作簿，可能已损坏或扩展名不正确，请重新另存为 .xlsx 后重试。'
+  if (/worker|blob:|content security policy|securityerror|failed to construct/i.test(text)) return '当前浏览器限制了 XLSX 解析，兼容模式也未能完成读取。请换用最新版 Chrome 或 Edge，或关闭相关安全扩展后重试。'
+  return 'XLSX 文件无法读取，请确认文件未损坏并使用 Excel 另存为 .xlsx 后重试。'
+}
+
 export function parseCsvText(text: string): TableImportResult {
   if (text.trim() === '') return failure('empty-file', '文件中没有可读取的表格内容，请检查文件后重试。')
   const rows: string[][] = []
@@ -92,14 +104,35 @@ export function parseCsvText(text: string): TableImportResult {
   return buildTable(rows)
 }
 
+async function readXlsxWithUniversalParser(input: ArrayBuffer) {
+  const { readSheet } = await import('read-excel-file/universal')
+  return readSheet(input, { trim: false })
+}
+
+async function readXlsxWithBrowserParser(input: ArrayBuffer) {
+  const { readSheet } = await import('read-excel-file/browser')
+  return readSheet(input, { trim: false })
+}
+
 async function parseXlsxFile(file: File): Promise<TableImportResult> {
+  let input: ArrayBuffer
   try {
-    const { readSheet } = await import('read-excel-file/browser')
-    const rows = await readSheet(await readFileArrayBuffer(file), { trim: false })
-    return buildTable(rows.map((row) => row.map(toCellText)))
-  } catch {
-    return failure('workbook-read-failed', 'XLSX 文件无法读取，请确认文件未损坏后重试。')
+    input = await readFileArrayBuffer(file)
+  } catch (error) {
+    return failure('workbook-read-failed', getXlsxFailureMessage([error]))
   }
+
+  const errors: unknown[] = []
+  for (const readXlsx of [readXlsxWithUniversalParser, readXlsxWithBrowserParser]) {
+    try {
+      const rows = await readXlsx(input.slice(0))
+      return buildTable(rows.map((row) => row.map(toCellText)))
+    } catch (error) {
+      errors.push(error)
+    }
+  }
+
+  return failure('workbook-read-failed', getXlsxFailureMessage(errors))
 }
 
 export async function parseTableFile(file: File): Promise<TableImportResult> {

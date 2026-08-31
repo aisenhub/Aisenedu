@@ -2,6 +2,7 @@ import { ArrowDown, ArrowUp, Check, Plus, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../../../components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/ui/tooltip'
 import type { NameCleaningResult, ParsedTable } from '../types'
 
 type NameColumnPickerProps = Readonly<{
@@ -17,6 +18,28 @@ type SelectedColumn = Readonly<{
   columnIndex: string
   showTitle: boolean
 }>
+
+function TitleToggle({ rowIndex, showTitle, onChange }: Readonly<{ rowIndex: number; showTitle: boolean; onChange: () => void }>) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          aria-checked={showTitle}
+          aria-label={`第 ${rowIndex + 1} 行是否显示标题`}
+          className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md outline-none transition-colors hover:bg-surface-muted focus:ring-4 focus:ring-focus/25"
+          onClick={onChange}
+          role="switch"
+          type="button"
+        >
+          <span aria-hidden="true" className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${showTitle ? 'bg-primary' : 'bg-surface-muted ring-1 ring-border'}`}>
+            <span className={`size-3 rounded-full bg-white shadow-sm transition-transform ${showTitle ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+          </span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>{showTitle ? '关闭该行标题' : '显示该行标题'}</TooltipContent>
+    </Tooltip>
+  )
+}
 
 function getInitialColumns(columns: readonly string[], selectedColumns: readonly number[] = [], showTitles: readonly boolean[] = []): SelectedColumn[] {
   const validSelectedColumns = selectedColumns.filter((index) => index >= 0 && index < columns.length)
@@ -62,21 +85,21 @@ export function NameColumnPicker({ confirmLabel = '确认字段选择', initialS
 
       <div className="mt-4 space-y-3">
         {selectedColumns.map((selectedColumn, rowIndex) => (
-          <div className="flex flex-wrap items-end gap-2" key={`column-row-${rowIndex}`}>
-            <div className="min-w-0 flex-1">
-              <label className="mb-1.5 block text-sm font-medium text-text" htmlFor={`column-row-${rowIndex}`}>{`第 ${rowIndex + 1} 行内容`}</label>
+          <div className="grid grid-cols-1 items-end gap-y-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-3" key={`column-row-${rowIndex}`}>
+            <div className="min-w-0 sm:max-w-[12rem]">
+              <label className="sr-only" htmlFor={`column-row-${rowIndex}`}>{`第 ${rowIndex + 1} 行内容`}</label>
               <Select onValueChange={(value) => handleColumnChange(rowIndex, value)} value={selectedColumn.columnIndex || undefined}>
-                <SelectTrigger aria-label={`第 ${rowIndex + 1} 行内容选择`} id={`column-row-${rowIndex}`}><SelectValue placeholder="请选择要显示的字段" /></SelectTrigger>
+                <SelectTrigger aria-label={`第 ${rowIndex + 1} 行内容选择`} className="h-9 min-h-9 max-w-full px-2.5 text-sm sm:px-3" id={`column-row-${rowIndex}`}><SelectValue placeholder="请选择要显示的字段" /></SelectTrigger>
                 <SelectContent>
                   {table.columns.map((column, columnIndex) => <SelectItem disabled={selectedColumns.some((value, index) => index !== rowIndex && value.columnIndex === String(columnIndex))} key={`${column}-${columnIndex}`} value={String(columnIndex)}>{column}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <button aria-checked={selectedColumn.showTitle} aria-label={`第 ${rowIndex + 1} 行是否显示标题`} className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface-raised px-3 text-sm text-text outline-none transition-colors hover:border-primary/50 focus:ring-4 focus:ring-focus/25" onClick={() => setSelectedColumns((current) => current.map((column, index) => index === rowIndex ? { ...column, showTitle: !column.showTitle } : column))} role="switch" type="button"><span className="whitespace-nowrap">{selectedColumn.showTitle ? '显示标题' : '不显示标题'}</span><span aria-hidden="true" className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${selectedColumn.showTitle ? 'bg-primary' : 'bg-surface-muted ring-1 ring-border'}`}><span className={`size-4 rounded-full bg-white shadow-sm transition-transform ${selectedColumn.showTitle ? 'translate-x-4' : 'translate-x-0.5'}`} /></span></button>
-            <div className="flex shrink-0 items-center gap-1">
-              <Button aria-label={`上移第 ${rowIndex + 1} 行字段`} disabled={rowIndex === 0} onClick={() => handleMoveColumn(rowIndex, -1)} size="icon" type="button" variant="ghost"><ArrowUp aria-hidden="true" className="size-4" /></Button>
-              <Button aria-label={`下移第 ${rowIndex + 1} 行字段`} disabled={rowIndex === selectedColumns.length - 1} onClick={() => handleMoveColumn(rowIndex, 1)} size="icon" type="button" variant="ghost"><ArrowDown aria-hidden="true" className="size-4" /></Button>
-              <Button aria-label={`删除第 ${rowIndex + 1} 行字段`} disabled={selectedColumns.length === 1} onClick={() => handleRemoveColumn(rowIndex)} size="icon" type="button" variant="ghost"><Trash2 aria-hidden="true" className="size-4" /></Button>
+            <div className="flex min-w-0 items-center justify-end gap-0.5 sm:justify-start">
+              <TitleToggle rowIndex={rowIndex} showTitle={selectedColumn.showTitle} onChange={() => setSelectedColumns((current) => current.map((column, index) => index === rowIndex ? { ...column, showTitle: !column.showTitle } : column))} />
+              <Button aria-label={`上移第 ${rowIndex + 1} 行字段`} className="size-9 rounded-md" disabled={rowIndex === 0} onClick={() => handleMoveColumn(rowIndex, -1)} size="icon" type="button" variant="ghost"><ArrowUp aria-hidden="true" className="size-4" /></Button>
+              <Button aria-label={`下移第 ${rowIndex + 1} 行字段`} className="size-9 rounded-md" disabled={rowIndex === selectedColumns.length - 1} onClick={() => handleMoveColumn(rowIndex, 1)} size="icon" type="button" variant="ghost"><ArrowDown aria-hidden="true" className="size-4" /></Button>
+              <Button aria-label={`删除第 ${rowIndex + 1} 行字段`} className="size-9 rounded-md" disabled={selectedColumns.length === 1} onClick={() => handleRemoveColumn(rowIndex)} size="icon" type="button" variant="ghost"><Trash2 aria-hidden="true" className="size-4" /></Button>
             </div>
           </div>
         ))}

@@ -164,7 +164,7 @@ NL-00 工程基线、UI 基础与测试工具链
 - `LabelImportPanel.tsx`、`NameColumnPicker.tsx`、`NameListPreview.tsx`
 - `workers/parseWorkbook.worker.ts`（仅在主线程测量显示明显卡顿时创建）、必需的新依赖与锁文件。
 
-**实施前检查**：先检查 `apps/web/package.json` 是否已有可用解析能力。当前 XLSX 解析使用 MIT 的 `read-excel-file@9.3.10` 浏览器入口；只在文件导入时动态加载，并在变更说明记录版本、许可证和最终产物体积。CSV 继续使用 feature 内的受限解析器，不另加 CSV 解析库。
+**实施前检查**：先检查 `apps/web/package.json` 是否已有可用解析能力。当前 XLSX 解析使用 MIT 的 `read-excel-file@9.3.10` 兼容入口和浏览器入口；只在文件导入时动态加载，并在变更说明记录版本、许可证和最终产物体积。CSV 继续使用 feature 内的受限解析器，不另加 CSV 解析库。
 
 **实现要求**：
 
