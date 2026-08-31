@@ -106,13 +106,13 @@ describe('姓名贴工作台流程', () => {
       { label: '座号', value: '01', showTitle: true },
     ])
 
-    await user.click(screen.getByRole('button', { name: /内容样式：无衬线 · 14pt，待处理/ }))
+    await user.click(screen.getByRole('button', { name: /内容样式：楷体 · 14pt，待处理/ }))
     const fontWeight = screen.getByRole('combobox', { name: '字重' })
     expect(fontWeight).toHaveTextContent('中等')
     expect(screen.getByRole('combobox', { name: '对齐' })).toHaveTextContent('左对齐')
     const lineHeight = screen.getByLabelText('行间距')
     expect(lineHeight).toHaveAttribute('min', '1')
-    expect(lineHeight).toHaveValue(1)
+    expect(lineHeight).toHaveValue(1.5)
     await user.clear(lineHeight)
     await user.type(lineHeight, '1.5')
     expect(lineHeight).toHaveValue(1.5)
@@ -120,9 +120,9 @@ describe('姓名贴工作台流程', () => {
 
     await user.click(screen.getByRole('button', { name: '恢复默认样式' }))
     expect(useLabelPrintingStore.getState().draft.appearance.fontSizePt).toBe(14)
-    expect(useLabelPrintingStore.getState().draft.appearance.lineHeight).toBe(1)
+    expect(useLabelPrintingStore.getState().draft.appearance.lineHeight).toBe(1.5)
     expect(useLabelPrintingStore.getState().draft.names[0]?.fields?.[1]?.showTitle).toBe(false)
-    expect(screen.getByLabelText('行间距')).toHaveValue(1)
+    expect(screen.getByLabelText('行间距')).toHaveValue(1.5)
   })
 
   it('字段行都可删除，但至少保留一行', async () => {

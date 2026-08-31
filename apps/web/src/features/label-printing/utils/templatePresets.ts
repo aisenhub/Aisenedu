@@ -62,18 +62,15 @@ export const LABEL_TEMPLATE_PRESETS: readonly LabelTemplatePreset[] = [
 export const DEFAULT_TEMPLATE_ID = 'a4-4x10-1-line'
 
 export const DEFAULT_APPEARANCE: LabelAppearance = {
-  fontPreset: 'systemSans',
+  fontPreset: 'kaiTi',
   fontSizePt: 14,
-  lineHeight: 1,
+  lineHeight: 1.5,
   fontWeight: 500,
   textAlign: 'left',
   textColor: '#0f172a',
   backgroundColor: '#ffffff',
   backgroundMode: 'solid',
   borderColor: '#cbd5e1',
-  borderMode: 'solid',
-  gradientPalette: { start: '#9fe3cf', end: '#b9d7f7' },
-  gradientSeed: 1,
   borderWidthMm: asMm(0.25),
   outerBorderUniform: true,
   outerBorderWidths: { topMm: asMm(0.25), rightMm: asMm(0.25), bottomMm: asMm(0.25), leftMm: asMm(0.25) },

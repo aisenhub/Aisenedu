@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LABEL_TEMPLATE_PRESETS } from './templatePresets'
+import { DEFAULT_APPEARANCE, LABEL_TEMPLATE_PRESETS } from './templatePresets'
 
 describe('姓名贴模板预设', () => {
   it('提供规定的网格、内容容量和实物验证状态元数据', () => {
@@ -22,5 +22,9 @@ describe('姓名贴模板预设', () => {
   it('模板按内容行数从一行到四行递增', () => {
     expect(LABEL_TEMPLATE_PRESETS.map((template) => template.contentCapacity.maxLines)).toEqual([1, 2, 3, 4])
     expect(LABEL_TEMPLATE_PRESETS[1]?.contentCapacity.recommendedUse).toContain('班级')
+  })
+
+  it('默认使用楷体', () => {
+    expect(DEFAULT_APPEARANCE.fontPreset).toBe('kaiTi')
   })
 })

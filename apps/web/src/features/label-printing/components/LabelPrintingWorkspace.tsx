@@ -8,6 +8,7 @@ import { LabelPrintingDraftProvider } from '../hooks/useLabelPrintingDraft'
 import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
 import { createPageLayouts } from '../utils/layout'
 import { validateLayout } from '../utils/validation'
+import { resolveFontPreset } from '../utils/font'
 import type { LayoutField } from '../types'
 import { LabelContentPanel } from './LabelContentPanel'
 import { LabelImportPanel } from './LabelImportPanel'
@@ -55,6 +56,13 @@ export function LabelPrintingWorkspace() {
   useEffect(() => {
     if (showValidationAlert) validationAlertRef.current?.focus()
   }, [showValidationAlert])
+
+  useEffect(() => {
+    const resolvedFontPreset = resolveFontPreset(draft.appearance.fontPreset)
+    if (resolvedFontPreset !== draft.appearance.fontPreset) {
+      useLabelPrintingStore.getState().updateAppearance({ fontPreset: resolvedFontPreset })
+    }
+  }, [draft.appearance.fontPreset])
 
   useEffect(() => () => {
     const objectUrl = useLabelPrintingStore.getState().draft.appearance.backgroundImage?.objectUrl

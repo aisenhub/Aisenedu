@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { asMm, LABEL_FONT_FAMILIES, type LabelAppearance, type PageLayout } from '../types'
-import { getDeterministicGradient, getMaskColor, INNER_BORDER_GAP_MM, INNER_BORDER_WIDTH_MM } from '../utils/appearance'
+import { getMaskColor, INNER_BORDER_GAP_MM, INNER_BORDER_WIDTH_MM } from '../utils/appearance'
 import { getLabelTextLayout, getSafeLineHeight } from '../utils/textFit'
 
 function getOuterBorderWidths(appearance: LabelAppearance) {
@@ -44,9 +44,6 @@ export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelP
             : cell.student?.value
               ? [`${appearance.showNameTitle ? '姓名：' : ''}${cell.student.value}`]
               : []
-        const borderBackground = appearance.borderMode === 'randomGradient'
-          ? getDeterministicGradient(appearance.gradientPalette, appearance.gradientSeed, cell.id)
-          : appearance.borderColor
         const background = appearance.backgroundMode === 'image' ? appearance.backgroundImage : undefined
         const outerBorderWidths = getOuterBorderWidths(appearance)
         const effectiveOuterBorderWidths = appearance.outerBorderVisible ? outerBorderWidths : { topMm: asMm(0), rightMm: asMm(0), bottomMm: asMm(0), leftMm: asMm(0) }
@@ -61,7 +58,7 @@ export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelP
             style={{
               ...cellStyle,
               alignItems: 'stretch',
-              background: appearance.outerBorderVisible ? borderBackground : appearance.backgroundColor,
+              background: appearance.outerBorderVisible ? appearance.borderColor : appearance.backgroundColor,
               borderRadius: `${appearance.borderRadiusMm}mm`,
               boxSizing: 'border-box',
               display: 'flex',

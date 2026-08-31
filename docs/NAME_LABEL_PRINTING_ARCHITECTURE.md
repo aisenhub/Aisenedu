@@ -265,9 +265,6 @@ type LabelAppearance = {
   backgroundColor: string // 标准化为 #RRGGBB
   backgroundMode: 'solid' | 'image'
   backgroundImage?: { mimeType: 'image/png' | 'image/jpeg' | 'image/webp'; objectUrl: string; naturalWidth: number; naturalHeight: number; scale: number; offsetX: number; offsetY: number; maskTone: 'light' | 'dark'; maskOpacity: number }
-  borderMode: 'solid' | 'randomGradient'
-  gradientPalette: { start: string; end: string }
-  gradientSeed: number
   borderColor: string
   borderWidthMm: LengthMm
   borderRadiusMm: LengthMm
@@ -475,7 +472,7 @@ label_project_items
 ## 14. 优化后的实现边界
 
 - 工作流由 `LabelWorkflowStepper` 管理当前步骤；`LabelPrintingDraftProvider` 在工作台根部提供单一配置表单会话，模板面板和校准面板共享原始值、触碰状态与错误。
-- `LabelAppearance` 使用本机字体预设、标准 HEX 色值、纯色/本地图片背景、实线/确定性渐变边框和一至四行字段模型。字段标题控制位于内容样式区域，不再放在名单导入区域。
+- `LabelAppearance` 使用本机字体预设、标准 HEX 色值、纯色/本地图片背景、纯色外框和一至四行字段模型。字段标题控制位于内容样式区域，不再放在名单导入区域。
 - `LabelBackgroundEditor` 使用原生 Pointer Events、滑块和按钮完成会话级背景图拖动/缩放；背景图只保留当前 object URL 和受限变换参数，打印与屏幕共用 `LabelPageCanvas`。
 - 本地模板通过 `templateConfig.ts` 的版本化白名单导入、导出和保存；配置不能包含姓名、班级、文件名、背景图片或 object URL。
 - 真实打印仍依赖浏览器打印对话框的 100% 缩放和背景图形选项；实体打印机的纸张进纸与毫米偏差必须在用户环境中校准，不能由 Web 页面宣称自动验证。

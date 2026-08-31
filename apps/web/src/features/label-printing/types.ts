@@ -58,10 +58,8 @@ export type LabelTemplatePreset = Readonly<{
 }>
 
 export type FontPreset = 'systemSans' | 'systemSerif' | 'kaiTi' | 'monospace'
-export type LabelBorderMode = 'solid' | 'randomGradient'
 export type InnerBorderStyle = 'solid' | 'dashed'
 export type LabelBackgroundMode = 'solid' | 'image'
-export type GradientPalette = Readonly<{ start: string; end: string }>
 export type OuterBorderWidths = Readonly<{ topMm: Mm; rightMm: Mm; bottomMm: Mm; leftMm: Mm }>
 export type LocalBackgroundImage = Readonly<{
   mimeType: 'image/png' | 'image/jpeg' | 'image/webp'
@@ -86,9 +84,6 @@ export type LabelAppearance = Readonly<{
   backgroundMode: LabelBackgroundMode
   backgroundImage?: LocalBackgroundImage
   borderColor: string
-  borderMode: LabelBorderMode
-  gradientPalette: GradientPalette
-  gradientSeed: number
   borderWidthMm: Mm
   outerBorderUniform: boolean
   outerBorderWidths: OuterBorderWidths

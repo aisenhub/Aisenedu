@@ -148,7 +148,6 @@ export const useLabelPrintingStore = create<LabelPrintingState>()(persist((set) 
         ...state.draft,
         appearance: {
           ...DEFAULT_APPEARANCE,
-          gradientPalette: { ...DEFAULT_APPEARANCE.gradientPalette },
           outerBorderWidths: { ...DEFAULT_APPEARANCE.outerBorderWidths },
         },
       },
