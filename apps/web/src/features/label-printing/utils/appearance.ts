@@ -1,6 +1,9 @@
 import type { GradientPalette } from '../types'
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/i
+export const INNER_BORDER_WIDTH_MM = 0.2
+export const INNER_BORDER_GAP_MM = INNER_BORDER_WIDTH_MM * 2
+export const MIN_LABEL_PADDING_MM = 1
 
 export function normalizeHexColor(value: string, fallback: string) {
   const normalized = value.trim().toLowerCase()

@@ -14,5 +14,5 @@ export async function waitForPrintableImages(root: HTMLElement | null) {
   })))
 }
 
-export const LABEL_PRINT_DOCUMENT_TITLE = 'Aisenedu_学生姓名贴'
-export const CALIBRATION_PRINT_DOCUMENT_TITLE = 'Aisenedu_姓名贴校准页'
+export const LABEL_PRINT_DOCUMENT_TITLE = 'Aisenkit_学生姓名贴'
+export const CALIBRATION_PRINT_DOCUMENT_TITLE = 'Aisenkit_姓名贴校准页'

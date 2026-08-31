@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, ClipboardX, Printer, UsersRound } from 'lucide-react'
+import { AlertTriangle, ClipboardX, Printer, UsersRound } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '../../../components/ui/button'
@@ -7,7 +7,6 @@ import { useNameLabelPrint } from '../hooks/useNameLabelPrint'
 import { LabelPrintingDraftProvider } from '../hooks/useLabelPrintingDraft'
 import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
 import { createPageLayouts } from '../utils/layout'
-import { getTemplatePreset } from '../utils/templatePresets'
 import { validateLayout } from '../utils/validation'
 import type { LayoutField } from '../types'
 import { LabelContentPanel } from './LabelContentPanel'
@@ -22,13 +21,12 @@ import { LabelWorkflowStepper, type LabelWorkflowStep } from './LabelWorkflowSte
 const FIELD_TARGETS: Partial<Record<LayoutField, string>> = {
   'paper.widthMm': 'paper-width', 'paper.heightMm': 'paper-height', 'paper.marginTopMm': 'margin-top', 'paper.marginRightMm': 'margin-right',
   'paper.marginBottomMm': 'margin-bottom', 'paper.marginLeftMm': 'margin-left', 'layout.labelWidthMm': 'label-width', 'layout.labelHeightMm': 'label-height',
-  'layout.columns': 'label-columns', 'layout.rows': 'label-rows', 'layout.gapXmm': 'gap-x', 'layout.gapYmm': 'gap-y', 'layout.firstLabelIndex': 'first-label-index',
+  'layout.columns': 'label-columns', 'layout.rows': 'label-rows', 'layout.gapXmm': 'gap-x', 'layout.gapYmm': 'gap-y',
   'layout.offsetXmm': 'offset-x', 'layout.offsetYmm': 'offset-y',
 }
 
 export function LabelPrintingWorkspace() {
   const draft = useLabelPrintingStore((state) => state.draft)
-  const selectedTemplateId = useLabelPrintingStore((state) => state.selectedTemplateId)
   const previewScale = useLabelPrintingStore((state) => state.previewScale)
   const printStatus = useLabelPrintingStore((state) => state.printStatus)
   const printError = useLabelPrintingStore((state) => state.printError)
@@ -36,10 +34,8 @@ export function LabelPrintingWorkspace() {
   const setNames = useLabelPrintingStore((state) => state.setNames)
   const setBackgroundImage = useLabelPrintingStore((state) => state.setBackgroundImage)
   const updateAppearance = useLabelPrintingStore((state) => state.updateAppearance)
-  const selectTemplate = useLabelPrintingStore((state) => state.selectTemplate)
   const setPreviewScale = useLabelPrintingStore((state) => state.setPreviewScale)
   const setPrintStatus = useLabelPrintingStore((state) => state.setPrintStatus)
-  const template = getTemplatePreset(selectedTemplateId)
   const validation = useMemo(() => validateLayout({ paper: draft.paper, layout: draft.layout }), [draft.layout, draft.paper])
   const pages = useMemo(() => createPageLayouts(draft.names, draft.paper, draft.layout), [draft.layout, draft.names, draft.paper])
   const effectiveErrors = { ...validation.errors, ...formErrors }
@@ -52,19 +48,13 @@ export function LabelPrintingWorkspace() {
   const [clearOpen, setClearOpen] = useState(false)
   const [activeStep, setActiveStep] = useState<LabelWorkflowStep>(1)
   const [hasLabelOverflow, setHasLabelOverflow] = useState(false)
-  const hadNamesRef = useRef(draft.names.length > 0)
 
-  const labelPrinter = useNameLabelPrint({ canPrint: canPrintLabels, contentRef: labelPrintRef, documentTitle: 'Aisenedu_学生姓名贴', paper: draft.paper })
-  const calibrationPrinter = useNameLabelPrint({ canPrint: canPrintCalibration, contentRef: calibrationPrintRef, documentTitle: 'Aisenedu_姓名贴校准页', paper: draft.paper })
+  const labelPrinter = useNameLabelPrint({ canPrint: canPrintLabels, contentRef: labelPrintRef, documentTitle: 'Aisenkit_学生姓名贴', paper: draft.paper })
+  const calibrationPrinter = useNameLabelPrint({ canPrint: canPrintCalibration, contentRef: calibrationPrintRef, documentTitle: 'Aisenkit_姓名贴校准页', paper: draft.paper })
 
   useEffect(() => {
     if (showValidationAlert) validationAlertRef.current?.focus()
   }, [showValidationAlert])
-
-  useEffect(() => {
-    if (!hadNamesRef.current && draft.names.length > 0 && activeStep === 1) setActiveStep(2)
-    hadNamesRef.current = draft.names.length > 0
-  }, [activeStep, draft.names.length])
 
   useEffect(() => () => {
     const objectUrl = useLabelPrintingStore.getState().draft.appearance.backgroundImage?.objectUrl
@@ -102,7 +92,7 @@ export function LabelPrintingWorkspace() {
       <header className="flex flex-col justify-between gap-5 border-b border-border pb-6 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-text sm:text-4xl">学生姓名贴</h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-text-muted">导入学生姓名，也可以同时带上班级，在浏览器内完成排版、真实尺寸预览和 A4 打印。学生信息不会写入 URL、存储或网络请求。</p>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-text-muted">导入学生姓名，也可以同时带上班级，在浏览器内完成排版、真实尺寸预览和 A4 打印。项目内容会优先保存在本地，不会上传到网络。</p>
         </div>
         <div className="flex items-center gap-3 text-sm text-text-muted" aria-label="当前工作台状态"><span className="inline-flex items-center gap-1.5 rounded-full bg-surface-raised px-3 py-2"><UsersRound aria-hidden="true" className="size-4" />{draft.names.length} 人</span><span className="rounded-full bg-surface-raised px-3 py-2">{pages.length} 页</span></div>
       </header>
@@ -111,24 +101,23 @@ export function LabelPrintingWorkspace() {
 
       <LabelWorkflowStepper activeStep={activeStep} onStepChange={setActiveStep} steps={[
         { id: 1, title: '导入名单', summary: draft.names.length > 0 ? `${draft.names.length} 人 · ${draft.names.some((name) => name.className) ? '双字段' : '仅姓名'}` : '等待导入', state: draft.names.length > 0 ? 'complete' : activeStep === 1 ? 'current' : 'pending' },
-        { id: 2, title: '选择版式', summary: `${template.layout.columns}×${template.layout.rows} · ${template.paper.size}`, state: !validation.valid ? 'error' : activeStep === 2 ? 'current' : 'complete' },
+        { id: 2, title: '标签排版', summary: `${draft.paper.size} · ${draft.layout.columns}×${draft.layout.rows}`, state: activeStep === 2 ? 'current' : validation.valid ? 'complete' : 'error' },
         { id: 3, title: '内容样式', summary: `${draft.appearance.fontPreset === 'kaiTi' ? '楷体' : draft.appearance.fontPreset === 'systemSerif' ? '衬线' : draft.appearance.fontPreset === 'monospace' ? '等宽' : '无衬线'} · ${draft.appearance.fontSizePt}pt`, state: activeStep === 3 ? 'current' : 'pending' },
         { id: 4, title: '打印校准', summary: canPrintLabels ? `${pages.length} 页 · 可打印` : draft.names.length === 0 ? '等待名单' : validation.valid ? '准备检查' : '需要修正', state: activeStep === 4 ? 'current' : canPrintLabels ? 'complete' : 'pending' },
       ]} />
 
       <div className="mt-6 grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(300px,390px)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-4">
-          {activeStep === 1 ? <LabelImportPanel /> : null}
+          {activeStep === 1 ? <LabelImportPanel onClearRequest={() => setClearOpen(true)} /> : null}
           {activeStep === 2 ? <LabelTemplatePanel /> : null}
           {activeStep === 3 ? <LabelContentPanel /> : null}
           {activeStep === 4 ? <PrintCalibrationPanel canPrint={canPrintCalibration} onPrintCalibration={() => calibrationPrinter.printDocument()} /> : null}
         </div>
 
         <div className="min-w-0 space-y-4 lg:sticky lg:top-6">
-          <section aria-labelledby="print-action-heading" className="rounded-2xl border border-primary/25 bg-primary/5 p-5 shadow-sm"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold text-primary">{template.name}</p><h2 className="mt-1 text-lg font-semibold text-text" id="print-action-heading">准备好后打印姓名贴</h2><p className="mt-1 text-sm text-text-muted">{draft.names.length > 0 ? `${draft.names.length} 人 · ${pages.length} 页` : '导入名单后会显示页数和预览'}</p></div><Button disabled={!canPrintLabels || printStatus === 'printing'} onClick={handleLabelPrint} size="lg"><Printer aria-hidden="true" className="size-5" />{printStatus === 'printing' ? '正在准备打印…' : '打印姓名贴'}</Button></div><ul aria-label="打印前检查" className="mt-4 grid gap-1 text-sm text-text-muted sm:grid-cols-2"><li>{draft.names.length > 0 ? `名单：${draft.names.length} 人` : '名单：待导入'}</li><li>纸张：{template.paper.size} · {template.paper.orientation === 'portrait' ? '纵向' : '横向'}</li><li>页面：{pages.length} 页</li><li>{validation.valid && Object.keys(formErrors).length === 0 ? '排版参数：已通过检查' : '排版参数：待修复'}</li></ul>{!canPrintLabels ? <p className="mt-3 text-sm leading-6 text-error" role="status">{draft.names.length === 0 ? '请先进入“导入名单”添加姓名。' : '请进入标记为待处理的步骤，修正参数后再打印。'}</p> : null}{printError ? <div className="mt-4 flex items-start gap-2 rounded-lg border border-error/25 bg-error/5 px-3 py-2 text-sm leading-6 text-error" role="alert"><AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />{printError}<button className="ml-auto cursor-pointer font-semibold underline underline-offset-2" onClick={() => setPrintStatus('idle')} type="button">关闭</button></div> : null}<div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-primary/20 pt-4"><p className="text-xs leading-5 text-text-muted">打印对话框请选择 100% 缩放，并按需开启背景图形。</p><Button disabled={draft.names.length === 0} onClick={() => setClearOpen(true)} size="sm" variant="danger"><ClipboardX aria-hidden="true" className="size-4" />清空名单</Button></div></section>
+          <section aria-labelledby="print-action-heading" className="rounded-2xl border border-primary/25 bg-primary/5 p-5 shadow-sm"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold text-primary">标签排版</p><h2 className="mt-1 text-lg font-semibold text-text" id="print-action-heading">准备好后打印姓名贴</h2><p className="mt-1 text-sm text-text-muted">{draft.names.length > 0 ? `${draft.names.length} 人 · ${pages.length} 页` : '导入名单后会显示页数和预览'}</p></div><Button disabled={!canPrintLabels || printStatus === 'printing'} onClick={handleLabelPrint} size="lg"><Printer aria-hidden="true" className="size-5" />{printStatus === 'printing' ? '正在准备打印…' : '打印姓名贴'}</Button></div><ul aria-label="打印前检查" className="mt-4 grid gap-1 text-sm text-text-muted sm:grid-cols-2"><li>{draft.names.length > 0 ? `名单：${draft.names.length} 人` : '名单：待导入'}</li><li>纸张：{draft.paper.size} · {draft.paper.orientation === 'portrait' ? '纵向' : '横向'}</li><li>页面：{pages.length} 页</li><li>{validation.valid && Object.keys(formErrors).length === 0 ? '排版参数：已通过检查' : '排版参数：待修正'}</li></ul>{!canPrintLabels ? <p className="mt-3 text-sm leading-6 text-error" role="status">{draft.names.length === 0 ? '请先进入“导入名单”添加姓名。' : '请进入“标签排版”修正参数后再打印。'}</p> : null}{printError ? <div className="mt-4 flex items-start gap-2 rounded-lg border border-error/25 bg-error/5 p-4 text-sm leading-6 text-error" role="alert"><AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />{printError}<button className="ml-auto cursor-pointer font-semibold underline underline-offset-2" onClick={() => setPrintStatus('idle')} type="button">关闭</button></div> : null}<div className="mt-4 border-t border-primary/20 pt-4"><p className="text-xs leading-5 text-text-muted">打印对话框请选择 100% 缩放，并按需开启背景图形。</p></div></section>
           <PrintPreview appearance={draft.appearance} onScaleChange={setPreviewScale} pages={pages} scale={previewScale} />
-          {hasLabelOverflow ? <section aria-labelledby="overflow-warning-title" className="rounded-xl border border-error/30 bg-error/5 p-4 text-sm leading-6 text-error"><h2 className="font-semibold" id="overflow-warning-title">部分字段可能在标签内被截断</h2><p className="mt-1">可减小字号、关闭字段标题，或选择更宽的标签模板后重试。</p><div className="mt-3 flex flex-wrap gap-2"><Button onClick={() => setActiveStep(3)} size="sm" type="button" variant="secondary">减小字号</Button><Button onClick={() => updateAppearance({ showClassTitle: false, showNameTitle: false })} size="sm" type="button" variant="secondary">关闭字段标题</Button><Button onClick={() => { selectTemplate('a4-2x8-2-lines'); setActiveStep(2) }} size="sm" type="button" variant="secondary">使用更宽模板</Button></div></section> : null}
-          <div className="rounded-xl border border-border bg-surface-raised p-4 text-sm leading-6 text-text-muted"><p className="font-semibold text-text">下一步怎么做</p><p className="mt-1">如果第一次使用这类标签纸，建议先打开左侧“校准与打印说明”，打印校准页确认 X / Y 偏移，再打印正式姓名贴。</p><a className="mt-3 inline-flex items-center gap-1 font-semibold text-primary underline-offset-2 hover:underline" href="#calibration-heading">查看校准说明 <ArrowRight aria-hidden="true" className="size-4" /></a></div>
+          {hasLabelOverflow ? <section aria-labelledby="overflow-warning-title" className="rounded-xl border border-error/30 bg-error/5 p-4 text-sm leading-6 text-error"><h2 className="font-semibold" id="overflow-warning-title">部分字段可能在标签内被截断</h2><p className="mt-1">可减小字号、关闭字段标题，或在“标签排版”中调整标签尺寸与网格参数。</p><div className="mt-3 flex flex-wrap gap-2"><Button onClick={() => setActiveStep(3)} size="sm" type="button" variant="secondary">减小字号</Button><Button onClick={() => updateAppearance({ showFieldTitles: false, showClassTitle: false, showNameTitle: false })} size="sm" type="button" variant="secondary">关闭字段标题</Button><Button onClick={() => setActiveStep(2)} size="sm" type="button" variant="secondary">调整标签排版</Button></div></section> : null}
           <div aria-hidden="true" ref={labelPrintRef}>{canPrintLabels ? <PrintableLabelDocument appearance={draft.appearance} pages={pages} /> : null}</div>
           <div aria-hidden="true" ref={calibrationPrintRef}>{canPrintCalibration ? <PrintableCalibrationDocument layout={draft.layout} paper={draft.paper} /> : null}</div>
         </div>

@@ -22,12 +22,12 @@ describe('姓名导入与清洗', () => {
     }
   })
 
-  it('清除空行、规范 Unicode 并保留重复项和源行号', () => {
+  it('清除空行、规范 Unicode，并按原样保留重复项和源行号', () => {
     const result = cleanNamesFromText(' 林小满\n\n林小满\n\u200B周知行 ')
     expect(result.removedEmptyCount).toBe(1)
-    expect(result.duplicateValues).toEqual(['林小满'])
+    expect(result.duplicateValues).toEqual([])
     expect(result.names.map((name) => [name.value, name.sourceRow, name.duplicateCount])).toEqual([
-      ['林小满', 1, 2], ['林小满', 3, 2], ['周知行', 4, 1],
+      ['林小满', 1, 1], ['林小满', 3, 1], ['周知行', 4, 1],
     ])
   })
 

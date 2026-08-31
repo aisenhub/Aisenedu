@@ -9,16 +9,19 @@ export type StudentName = Readonly<{
   id: string
   value: string
   className?: string
+  fields?: readonly ImportedFieldValue[]
   sourceRow: number
   duplicateCount: number
 }>
 
 export type PaperSize = 'A4' | 'LETTER' | 'CUSTOM'
 export type Orientation = 'portrait' | 'landscape'
+export type PaperCutStyle = 'none' | 'inner-lace' | 'inner-plain'
 
 export type PaperSettings = Readonly<{
   size: PaperSize
   orientation: Orientation
+  cutStyle?: PaperCutStyle
   widthMm: Mm
   heightMm: Mm
   marginTopMm: Mm
@@ -56,8 +59,10 @@ export type LabelTemplatePreset = Readonly<{
 
 export type FontPreset = 'systemSans' | 'systemSerif' | 'kaiTi' | 'monospace'
 export type LabelBorderMode = 'solid' | 'randomGradient'
+export type InnerBorderStyle = 'solid' | 'dashed'
 export type LabelBackgroundMode = 'solid' | 'image'
 export type GradientPalette = Readonly<{ start: string; end: string }>
+export type OuterBorderWidths = Readonly<{ topMm: Mm; rightMm: Mm; bottomMm: Mm; leftMm: Mm }>
 export type LocalBackgroundImage = Readonly<{
   mimeType: 'image/png' | 'image/jpeg' | 'image/webp'
   objectUrl: string
@@ -73,6 +78,7 @@ export type LocalBackgroundImage = Readonly<{
 export type LabelAppearance = Readonly<{
   fontPreset: FontPreset
   fontSizePt: number
+  lineHeight: number
   fontWeight: 400 | 500 | 600 | 700
   textAlign: 'left' | 'center' | 'right'
   textColor: string
@@ -84,12 +90,18 @@ export type LabelAppearance = Readonly<{
   gradientPalette: GradientPalette
   gradientSeed: number
   borderWidthMm: Mm
+  outerBorderUniform: boolean
+  outerBorderWidths: OuterBorderWidths
+  outerBorderVisible: boolean
+  innerBorderVisible: boolean
+  innerBorderColor: string
+  innerBorderStyle: InnerBorderStyle
   borderRadiusMm: Mm
-  paddingMm: Mm
   backgroundMaskOpacity: number
   backgroundMaskTone: 'light' | 'dark'
   showClassTitle: boolean
   showNameTitle: boolean
+  showFieldTitles?: boolean
 }>
 
 export const LABEL_FONT_FAMILIES: Readonly<Record<FontPreset, string>> = {
@@ -192,7 +204,13 @@ export type NameCleaningResult = Readonly<{
 export type ImportNameValue = Readonly<{
   value: string
   className?: string
+  fields?: readonly ImportedFieldValue[]
   sourceRow: number
+}>
+
+export type ImportedFieldValue = Readonly<{
+  label: string
+  value: string
 }>
 
 export type LabelPrintFormState = Readonly<{

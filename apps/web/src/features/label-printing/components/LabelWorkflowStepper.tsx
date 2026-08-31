@@ -1,4 +1,4 @@
-import { ArrowRight, Check, CircleAlert } from 'lucide-react'
+import { Check, CircleAlert } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { cn } from '../../../components/ui/utils'
 
@@ -45,7 +45,6 @@ export function LabelWorkflowStepper({
 
           return (
             <li className="relative min-w-0" key={step.id}>
-              {index < steps.length - 1 ? <span aria-hidden="true" className="pointer-events-none absolute -right-2.5 top-1/2 z-20 hidden size-5 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface-raised text-primary/60 xl:flex"><ArrowRight aria-hidden="true" className="size-3.5" strokeWidth={2} /></span> : null}
               <button
                 aria-current={step.state === 'current' ? 'step' : undefined}
                 aria-label={`${step.title}：${step.summary}，${stateLabel}`}
@@ -69,6 +68,13 @@ export function LabelWorkflowStepper({
                   <span className="sr-only">{stateLabel}</span>
                 </span>
               </button>
+              {index < steps.length - 1 ? (
+                <span aria-hidden="true" className="pointer-events-none absolute left-[calc(50%+3.5rem)] top-1/2 z-20 hidden size-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center text-primary/55 xl:flex">
+                  <svg className="size-5" fill="none" viewBox="0 0 16 16">
+                    <path d="m2 3 4 5-4 5M8 3l4 5-4 5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+                  </svg>
+                </span>
+              ) : null}
             </li>
           )
         })}

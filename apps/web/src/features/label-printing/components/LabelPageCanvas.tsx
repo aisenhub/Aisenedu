@@ -1,6 +1,14 @@
 import type { CSSProperties } from 'react'
-import { LABEL_FONT_FAMILIES, type LabelAppearance, type PageLayout } from '../types'
-import { getDeterministicGradient, getMaskColor } from '../utils/appearance'
+import { asMm, LABEL_FONT_FAMILIES, type LabelAppearance, type PageLayout } from '../types'
+import { getDeterministicGradient, getMaskColor, INNER_BORDER_GAP_MM, INNER_BORDER_WIDTH_MM } from '../utils/appearance'
+import { getLabelTextLayout } from '../utils/textFit'
+
+function getOuterBorderWidths(appearance: LabelAppearance) {
+  if (appearance.outerBorderUniform) {
+    return { topMm: appearance.borderWidthMm, rightMm: appearance.borderWidthMm, bottomMm: appearance.borderWidthMm, leftMm: appearance.borderWidthMm }
+  }
+  return appearance.outerBorderWidths
+}
 
 type LabelPageCanvasProps = Readonly<{
   page: PageLayout
@@ -26,54 +34,69 @@ export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelP
         if (cell.kind === 'empty') {
           return <div aria-hidden="true" className={screenMode ? 'label-cell label-cell-empty' : 'label-cell label-cell-empty print-empty-cell'} key={cell.id} style={cellStyle} />
         }
-        const labelParts = [
-          cell.student?.className ? `${appearance.showClassTitle ? '班级：' : ''}${cell.student.className}` : '',
-          cell.student ? `${appearance.showNameTitle ? '姓名：' : ''}${cell.student.value}` : '',
-        ].filter(Boolean)
+        const showFieldTitles = appearance.showFieldTitles ?? appearance.showNameTitle
+        const labelParts = cell.student?.fields?.length
+          ? cell.student.fields.map((field) => field.value !== '' ? `${showFieldTitles ? `${field.label}：` : ''}${field.value}` : showFieldTitles ? `${field.label}：` : '')
+          : cell.student?.className
+            ? [cell.student.value ? `${showFieldTitles && appearance.showNameTitle ? '姓名：' : ''}${cell.student.value}` : showFieldTitles && appearance.showNameTitle ? '姓名：' : '', `${showFieldTitles && appearance.showClassTitle ? '班级：' : ''}${cell.student.className}`]
+            : cell.student?.value
+              ? [`${showFieldTitles && appearance.showNameTitle ? '姓名：' : ''}${cell.student.value}`]
+              : []
         const borderBackground = appearance.borderMode === 'randomGradient'
           ? getDeterministicGradient(appearance.gradientPalette, appearance.gradientSeed, cell.id)
           : appearance.borderColor
         const background = appearance.backgroundMode === 'image' ? appearance.backgroundImage : undefined
+        const outerBorderWidths = getOuterBorderWidths(appearance)
+        const effectiveOuterBorderWidths = appearance.outerBorderVisible ? outerBorderWidths : { topMm: asMm(0), rightMm: asMm(0), bottomMm: asMm(0), leftMm: asMm(0) }
+        const outerBorderInset = Math.max(effectiveOuterBorderWidths.topMm, effectiveOuterBorderWidths.rightMm, effectiveOuterBorderWidths.bottomMm, effectiveOuterBorderWidths.leftMm)
+        const innerBorderWidth = appearance.innerBorderVisible ? INNER_BORDER_WIDTH_MM : 0
+        const innerBorderGap = appearance.outerBorderVisible && appearance.innerBorderVisible ? INNER_BORDER_GAP_MM : 0
+        const textLayout = getLabelTextLayout({ appearance, heightMm: cell.heightMm, innerBorderGapMm: innerBorderGap, innerBorderWidthMm: innerBorderWidth, lines: labelParts, outerBorderWidths: effectiveOuterBorderWidths, widthMm: cell.widthMm })
         return (
           <div
             className="label-cell label-cell-filled"
             key={cell.id}
             style={{
               ...cellStyle,
-              alignItems: 'center',
-              background: borderBackground,
+              alignItems: 'stretch',
+              background: appearance.outerBorderVisible ? borderBackground : appearance.backgroundColor,
               borderRadius: `${appearance.borderRadiusMm}mm`,
               boxSizing: 'border-box',
               display: 'flex',
               overflow: 'hidden',
-              padding: `${appearance.borderWidthMm}mm`,
+              padding: `${effectiveOuterBorderWidths.topMm}mm ${effectiveOuterBorderWidths.rightMm}mm ${effectiveOuterBorderWidths.bottomMm}mm ${effectiveOuterBorderWidths.leftMm}mm`,
             }}
           >
-            <div
-              style={{
-                alignItems: 'center',
-                backgroundColor: appearance.backgroundMode === 'solid' ? appearance.backgroundColor : undefined,
-                borderRadius: `${Math.max(0, appearance.borderRadiusMm - appearance.borderWidthMm)}mm`,
-                color: appearance.textColor,
-                display: 'flex',
-                flex: 1,
-                fontFamily: LABEL_FONT_FAMILIES[appearance.fontPreset],
-                fontSize: `${appearance.fontSizePt}pt`,
-                fontWeight: appearance.fontWeight,
-                justifyContent: appearance.textAlign === 'left' ? 'flex-start' : appearance.textAlign === 'right' ? 'flex-end' : 'center',
-                lineHeight: 1.25,
-                minWidth: 0,
-                overflow: 'hidden',
-                padding: `${appearance.paddingMm}mm`,
-                position: 'relative',
-                textAlign: appearance.textAlign,
-              }}
-            >
-              {background ? <img alt="" aria-hidden="true" src={background.objectUrl} style={{ height: 'auto', left: `calc(50% + ${background.offsetX}%)`, maxWidth: 'none', pointerEvents: 'none', position: 'absolute', top: `calc(50% + ${background.offsetY}%)`, transform: 'translate(-50%, -50%)', width: `${Math.max(100, background.scale * 100)}%` }} /> : null}
-              {background && background.maskOpacity > 0 ? <div aria-hidden="true" style={{ backgroundColor: getMaskColor(background.maskTone, background.maskOpacity), inset: 0, pointerEvents: 'none', position: 'absolute' }} /> : null}
-              <span className="label-text" style={{ display: 'block', maxWidth: '100%', minWidth: 0, overflow: 'hidden', position: 'relative', textOverflow: 'ellipsis', whiteSpace: 'nowrap', zIndex: 1 }}>
-                {labelParts.map((part, index) => <span className="block truncate" key={`${cell.id}-${part}`} title={part}>{index > 0 ? <br /> : null}{part}</span>)}
-              </span>
+            <div style={{ alignSelf: 'stretch', backgroundColor: appearance.backgroundColor, borderRadius: `${Math.max(0, appearance.borderRadiusMm - outerBorderInset)}mm`, boxSizing: 'border-box', display: 'flex', flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden', padding: `${innerBorderGap}mm` }}>
+              <div
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: appearance.backgroundMode === 'solid' ? appearance.backgroundColor : undefined,
+                  border: appearance.innerBorderVisible ? `${innerBorderWidth}mm ${appearance.innerBorderStyle} ${appearance.innerBorderColor}` : undefined,
+                  boxSizing: 'border-box',
+                  borderRadius: `${Math.max(0, appearance.borderRadiusMm - outerBorderInset - innerBorderGap)}mm`,
+                  color: appearance.textColor,
+                  display: 'flex',
+                  flex: 1,
+                  fontFamily: LABEL_FONT_FAMILIES[appearance.fontPreset],
+                  fontSize: `${textLayout.fontSizePt}pt`,
+                  fontWeight: appearance.fontWeight,
+                  justifyContent: appearance.textAlign === 'left' ? 'flex-start' : appearance.textAlign === 'right' ? 'flex-end' : 'center',
+                  lineHeight: appearance.lineHeight,
+                  minHeight: 0,
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  padding: `${textLayout.paddingMm}mm`,
+                  position: 'relative',
+                  textAlign: appearance.textAlign,
+                }}
+              >
+                {background ? <img alt="" aria-hidden="true" src={background.objectUrl} style={{ height: 'auto', left: `calc(50% + ${background.offsetX}%)`, maxWidth: 'none', pointerEvents: 'none', position: 'absolute', top: `calc(50% + ${background.offsetY}%)`, transform: 'translate(-50%, -50%)', width: `${Math.max(100, background.scale * 100)}%` }} /> : null}
+                {background && background.maskOpacity > 0 ? <div aria-hidden="true" style={{ backgroundColor: getMaskColor(background.maskTone, background.maskOpacity), inset: 0, pointerEvents: 'none', position: 'absolute' }} /> : null}
+                <span className="label-text" style={{ display: 'block', maxWidth: '100%', minWidth: 0, overflow: 'hidden', position: 'relative', textOverflow: 'ellipsis', whiteSpace: 'nowrap', zIndex: 1 }}>
+                  {labelParts.map((part, index) => <span className="block truncate" key={`${cell.id}-${index}`} title={part}>{index > 0 ? <br /> : null}{part}</span>)}
+                </span>
+              </div>
             </div>
           </div>
         )

@@ -30,8 +30,8 @@ export function useLabelImport() {
     return true
   }, [setNames])
 
-  const importText = useCallback((text: string) => {
-    const result = cleanNamesFromText(text)
+  const importText = useCallback((text: string, fieldLabels: readonly string[] = []) => {
+    const result = cleanNamesFromText(text, fieldLabels)
     applyCleaning(result)
     setTable(null)
   }, [applyCleaning])
@@ -52,13 +52,15 @@ export function useLabelImport() {
     return true
   }, [])
 
-  const selectColumn = useCallback((nameColumnIndex: number, classColumnIndex?: number) => {
-    if (!table || nameColumnIndex < 0 || nameColumnIndex >= table.columns.length || (classColumnIndex !== undefined && (classColumnIndex < 0 || classColumnIndex >= table.columns.length || classColumnIndex === nameColumnIndex))) {
+  const selectColumns = useCallback((selectedColumnIndexes: readonly number[]): NameCleaningResult | false => {
+    const uniqueIndexes = new Set(selectedColumnIndexes)
+    if (!table || selectedColumnIndexes.length === 0 || selectedColumnIndexes.some((index) => index < 0 || index >= table.columns.length) || uniqueIndexes.size !== selectedColumnIndexes.length) {
       setStatus('error')
-      setError('请选择有效的姓名列和班级列后重试；班级列可以不选择。')
+      setError('请至少选择一个字段，并确保每个字段只选择一次。')
       return false
     }
-    return applyCleaning(cleanNamesFromTable(table, nameColumnIndex, classColumnIndex))
+    const result = cleanNamesFromTable(table, selectedColumnIndexes)
+    return applyCleaning(result) ? result : false
   }, [applyCleaning, table])
 
   const cancelTable = useCallback(() => {
@@ -68,5 +70,5 @@ export function useLabelImport() {
     setCleaning(null)
   }, [])
 
-  return { status, table, error, cleaning, importText, importFile, selectColumn, cancelTable }
+  return { status, table, error, cleaning, importText, importFile, selectColumns, cancelTable }
 }

@@ -21,8 +21,6 @@ export function validateLayout(candidate: LayoutCandidate): LayoutValidationResu
     ['widthMm', paper.widthMm],
     ['heightMm', paper.heightMm],
     ['marginTopMm', paper.marginTopMm],
-    ['marginRightMm', paper.marginRightMm],
-    ['marginBottomMm', paper.marginBottomMm],
     ['marginLeftMm', paper.marginLeftMm],
   ]
   for (const [field, value] of paperNumbers) {
@@ -32,8 +30,6 @@ export function validateLayout(candidate: LayoutCandidate): LayoutValidationResu
   if (paper.widthMm <= 0) addError(errors, 'paper.widthMm', '纸张宽度必须大于 0mm')
   if (paper.heightMm <= 0) addError(errors, 'paper.heightMm', '纸张高度必须大于 0mm')
   if (paper.marginTopMm < 0) addError(errors, 'paper.marginTopMm', '页边距不能为负数')
-  if (paper.marginRightMm < 0) addError(errors, 'paper.marginRightMm', '页边距不能为负数')
-  if (paper.marginBottomMm < 0) addError(errors, 'paper.marginBottomMm', '页边距不能为负数')
   if (paper.marginLeftMm < 0) addError(errors, 'paper.marginLeftMm', '页边距不能为负数')
 
   const layoutNumbers: Array<[keyof LabelLayout, number]> = [
@@ -65,8 +61,8 @@ export function validateLayout(candidate: LayoutCandidate): LayoutValidationResu
 
   const gridWidth = layout.columns * layout.labelWidthMm + (layout.columns - 1) * layout.gapXmm
   const gridHeight = layout.rows * layout.labelHeightMm + (layout.rows - 1) * layout.gapYmm
-  const availableWidth = paper.widthMm - paper.marginLeftMm - paper.marginRightMm
-  const availableHeight = paper.heightMm - paper.marginTopMm - paper.marginBottomMm
+  const availableWidth = paper.widthMm - paper.marginLeftMm
+  const availableHeight = paper.heightMm - paper.marginTopMm
   if (gridWidth > availableWidth) addError(errors, 'layout.labelWidthMm', `横向网格需要 ${gridWidth.toFixed(1)}mm，可用宽度只有 ${availableWidth.toFixed(1)}mm`)
   if (gridHeight > availableHeight) addError(errors, 'layout.labelHeightMm', `纵向网格需要 ${gridHeight.toFixed(1)}mm，可用高度只有 ${availableHeight.toFixed(1)}mm`)
 

@@ -1,36 +1,43 @@
-import { Check, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, Plus, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../../../components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
-import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
-import type { ParsedTable } from '../types'
+import type { NameCleaningResult, ParsedTable } from '../types'
 
 type NameColumnPickerProps = Readonly<{
   table: ParsedTable
   onCancel: () => void
-  onSelect: (nameColumnIndex: number, classColumnIndex?: number) => boolean
+  onSelect: (columnIndexes: readonly number[]) => NameCleaningResult | false
 }>
 
-function findColumn(columns: readonly string[], pattern: RegExp) {
-  const index = columns.findIndex((column) => pattern.test(column.trim().toLowerCase()))
-  return index >= 0 ? String(index) : ''
+function getInitialColumns(columns: readonly string[]) {
+  const initialColumns = columns.slice(0, 4).map((_, index) => String(index))
+  return initialColumns.length > 0 ? initialColumns : ['']
 }
 
 export function NameColumnPicker({ onCancel, onSelect, table }: NameColumnPickerProps) {
-  const appearance = useLabelPrintingStore((state) => state.draft.appearance)
-  const updateAppearance = useLabelPrintingStore((state) => state.updateAppearance)
-  const [selectedNameColumn, setSelectedNameColumn] = useState(() => findColumn(table.columns, /姓名|名字|name|student/))
-  const [selectedClassColumn, setSelectedClassColumn] = useState(() => findColumn(table.columns, /班级|class|grade/))
-  const [showNameTitle, setShowNameTitle] = useState(appearance.showNameTitle)
-  const [showClassTitle, setShowClassTitle] = useState(appearance.showClassTitle)
-  const selectedNameIndex = selectedNameColumn === '' ? -1 : Number(selectedNameColumn)
-  const selectedClassIndex = selectedClassColumn === '' || selectedClassColumn === 'none' ? undefined : Number(selectedClassColumn)
-  const examples = (columnIndex: number | undefined) => columnIndex === undefined || columnIndex < 0 ? [] : table.rows.map((row) => row.values[columnIndex] ?? '').filter(Boolean).slice(0, 5)
-  const nameExamples = examples(selectedNameIndex)
-  const classExamples = examples(selectedClassIndex)
-  const handleNameColumnChange = (value: string) => {
-    setSelectedNameColumn(value)
-    if (selectedClassColumn === value) setSelectedClassColumn('none')
+  const [selectedColumns, setSelectedColumns] = useState(() => getInitialColumns(table.columns))
+  const selectedIndexes = selectedColumns.filter((value) => value !== '').map(Number)
+  const canConfirm = selectedIndexes.length > 0 && new Set(selectedIndexes).size === selectedIndexes.length
+  const canAddColumn = selectedColumns.length < Math.min(table.columns.length, 4)
+
+  const handleColumnChange = (rowIndex: number, value: string) => {
+    setSelectedColumns((current) => current.map((column, index) => index === rowIndex ? value : column))
+  }
+
+  const handleRemoveColumn = (rowIndex: number) => {
+    if (selectedColumns.length === 1) return
+    setSelectedColumns((current) => current.filter((_, index) => index !== rowIndex))
+  }
+
+  const handleMoveColumn = (rowIndex: number, direction: -1 | 1) => {
+    setSelectedColumns((current) => {
+      const targetIndex = rowIndex + direction
+      if (targetIndex < 0 || targetIndex >= current.length) return current
+      const next = [...current]
+      ;[next[rowIndex], next[targetIndex]] = [next[targetIndex], next[rowIndex]]
+      return next
+    })
   }
 
   return (
@@ -38,35 +45,36 @@ export function NameColumnPicker({ onCancel, onSelect, table }: NameColumnPicker
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-sm font-semibold text-text">确认导入字段</h3>
-          <p className="mt-1 text-sm leading-6 text-text-muted">姓名列必选，班级列可选；示例仅在当前页面内存中展示。</p>
+          <p className="mt-1 text-sm leading-6 text-text-muted">至少保留一行内容</p>
         </div>
-        <Button aria-label="取消选择姓名列" onClick={onCancel} size="sm" variant="ghost"><X aria-hidden="true" className="size-4" /></Button>
+        <Button aria-label="取消选择导入字段" onClick={onCancel} size="sm" variant="ghost"><X aria-hidden="true" className="size-4" /></Button>
       </div>
-      <div className="mt-4">
-        <label className="mb-1.5 block text-sm font-medium text-text" htmlFor="name-column">姓名列（必选）</label>
-        <Select onValueChange={handleNameColumnChange} value={selectedNameColumn || undefined}>
-          <SelectTrigger id="name-column"><SelectValue placeholder="请选择姓名列" /></SelectTrigger>
-          <SelectContent>
-            {table.columns.map((column, index) => <SelectItem key={`${column}-${index}`} value={String(index)}>{column}</SelectItem>)}
-          </SelectContent>
-        </Select>
+
+      <div className="mt-4 space-y-3">
+        {selectedColumns.map((selectedColumn, rowIndex) => (
+          <div className="flex items-end gap-2" key={`column-row-${rowIndex}`}>
+            <div className="min-w-0 flex-1">
+              <label className="mb-1.5 block text-sm font-medium text-text" htmlFor={`column-row-${rowIndex}`}>{`第 ${rowIndex + 1} 行内容`}</label>
+              <Select onValueChange={(value) => handleColumnChange(rowIndex, value)} value={selectedColumn || undefined}>
+                <SelectTrigger aria-label={`第 ${rowIndex + 1} 行内容选择`} id={`column-row-${rowIndex}`}><SelectValue placeholder="请选择要显示的字段" /></SelectTrigger>
+                <SelectContent>
+                  {table.columns.map((column, columnIndex) => <SelectItem disabled={selectedColumns.some((value, index) => index !== rowIndex && value === String(columnIndex))} key={`${column}-${columnIndex}`} value={String(columnIndex)}>{column}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <Button aria-label={`上移第 ${rowIndex + 1} 行字段`} disabled={rowIndex === 0} onClick={() => handleMoveColumn(rowIndex, -1)} size="icon" type="button" variant="ghost"><ArrowUp aria-hidden="true" className="size-4" /></Button>
+              <Button aria-label={`下移第 ${rowIndex + 1} 行字段`} disabled={rowIndex === selectedColumns.length - 1} onClick={() => handleMoveColumn(rowIndex, 1)} size="icon" type="button" variant="ghost"><ArrowDown aria-hidden="true" className="size-4" /></Button>
+              <Button aria-label={`删除第 ${rowIndex + 1} 行字段`} disabled={selectedColumns.length === 1} onClick={() => handleRemoveColumn(rowIndex)} size="icon" type="button" variant="ghost"><Trash2 aria-hidden="true" className="size-4" /></Button>
+            </div>
+          </div>
+        ))}
+        <Button aria-label="添加字段行" disabled={!canAddColumn} onClick={() => setSelectedColumns((current) => [...current, ''])} size="sm" type="button" variant="ghost"><Plus aria-hidden="true" className="size-4" />添加字段行</Button>
       </div>
-      <div className="mt-4">
-        <label className="mb-1.5 block text-sm font-medium text-text" htmlFor="class-column">班级列（可选）</label>
-        <Select onValueChange={setSelectedClassColumn} value={selectedClassColumn || 'none'}>
-          <SelectTrigger id="class-column"><SelectValue placeholder="不导入班级" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">不导入班级</SelectItem>
-            {table.columns.map((column, index) => <SelectItem disabled={index === selectedNameIndex} key={`${column}-${index}`} value={String(index)}>{column}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </div>
-      {nameExamples.length > 0 ? <div className="mt-4"><p className="text-xs font-semibold text-text-muted">姓名列示例（最多 5 个）</p><ul className="mt-2 flex flex-wrap gap-2">{nameExamples.map((example, index) => <li className="rounded-md bg-surface-raised px-2.5 py-1.5 text-sm text-text" key={`name-${example}-${index}`}>{example}</li>)}</ul></div> : null}
-      {classExamples.length > 0 ? <div className="mt-3"><p className="text-xs font-semibold text-text-muted">班级列示例（最多 5 个）</p><ul className="mt-2 flex flex-wrap gap-2">{classExamples.map((example, index) => <li className="rounded-md bg-surface-raised px-2.5 py-1.5 text-sm text-text" key={`class-${example}-${index}`}>{example}</li>)}</ul></div> : null}
-      <fieldset className="mt-4 rounded-lg border border-border bg-surface-raised p-3"><legend className="px-1 text-sm font-semibold text-text">字段标题</legend><p className="mt-1 text-xs leading-5 text-text-muted">确认后可在“名单与导入”区域继续调整。</p><div className="mt-2 grid gap-2 sm:grid-cols-2"><label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm font-medium text-text hover:bg-surface-muted"><input checked={showNameTitle} className="size-5 accent-primary" onChange={(event) => setShowNameTitle(event.target.checked)} type="checkbox" />显示“姓名”标题</label>{selectedClassIndex !== undefined ? <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 text-sm font-medium text-text hover:bg-surface-muted"><input checked={showClassTitle} className="size-5 accent-primary" onChange={(event) => setShowClassTitle(event.target.checked)} type="checkbox" />显示“班级”标题</label> : null}</div></fieldset>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button disabled={selectedNameIndex < 0} onClick={() => { const accepted = onSelect(selectedNameIndex, selectedClassIndex); if (accepted) updateAppearance({ showNameTitle, showClassTitle: selectedClassIndex === undefined ? false : showClassTitle }) }} size="sm"><Check aria-hidden="true" className="size-4" />确认字段选择</Button>
-        <Button onClick={onCancel} size="sm" variant="secondary">取消</Button>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <Button className="w-full justify-center" disabled={!canConfirm} onClick={() => onSelect(selectedIndexes)} size="sm"><Check aria-hidden="true" className="size-4" />确认字段选择</Button>
+        <Button className="w-full justify-center" onClick={onCancel} size="sm" variant="secondary">取消</Button>
       </div>
     </div>
   )

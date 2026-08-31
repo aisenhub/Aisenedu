@@ -126,32 +126,50 @@ function cleanValue(value: string) {
 export function cleanNameValues(values: readonly ImportNameValue[]): NameCleaningResult {
   const removedEmptyCount = values.reduce((count, item) => count + (cleanValue(item.value) === '' ? 1 : 0), 0)
   const tooLongRows = values
-    .filter((item) => [...cleanValue(item.value)].length > IMPORT_LIMITS.maxNameCharacters || [...cleanValue(item.className ?? '')].length > IMPORT_LIMITS.maxNameCharacters)
+    .filter((item) => [...cleanValue(item.value)].length > IMPORT_LIMITS.maxNameCharacters || [...cleanValue(item.className ?? '')].length > IMPORT_LIMITS.maxNameCharacters || item.fields?.some((field) => [...cleanValue(field.value)].length > IMPORT_LIMITS.maxNameCharacters))
     .map((item) => item.sourceRow)
   const cleanItems = values
-    .map((item) => ({ ...item, value: cleanValue(item.value), className: cleanValue(item.className ?? '') || undefined }))
-    .filter((item) => item.value !== '' && [...item.value].length <= IMPORT_LIMITS.maxNameCharacters && [...(item.className ?? '')].length <= IMPORT_LIMITS.maxNameCharacters)
-  const counts = new Map<string, number>()
-  for (const item of cleanItems) counts.set(item.value, (counts.get(item.value) ?? 0) + 1)
-  const duplicateValues = [...counts.entries()].filter(([, count]) => count > 1).map(([value]) => value)
+    .map((item) => {
+      const fields = item.fields?.map((field) => ({ label: cleanValue(field.label) || '未命名字段', value: cleanValue(field.value) }))
+      return { ...item, value: cleanValue(item.value), className: cleanValue(item.className ?? '') || undefined, ...(fields && fields.length > 0 ? { fields } : {}) }
+    })
+    .filter((item) => item.value !== '' && [...item.value].length <= IMPORT_LIMITS.maxNameCharacters && [...(item.className ?? '')].length <= IMPORT_LIMITS.maxNameCharacters && !item.fields?.some((field) => [...field.value].length > IMPORT_LIMITS.maxNameCharacters))
   const names: StudentName[] = cleanItems.map((item, index) => ({
     id: `name-${item.sourceRow}-${index}`,
     value: item.value,
     ...(item.className ? { className: item.className } : {}),
+    ...(item.fields ? { fields: item.fields } : {}),
     sourceRow: item.sourceRow,
-    duplicateCount: counts.get(item.value) ?? 1,
+    duplicateCount: 1,
   }))
-  return { names, removedEmptyCount, duplicateValues, tooLongRows }
+  return { names, removedEmptyCount, duplicateValues: [], tooLongRows }
 }
 
-export function cleanNamesFromText(text: string): NameCleaningResult {
-  return cleanNameValues(text.replace(/^\uFEFF/, '').split(/\r?\n/).map((value, index) => ({ value, sourceRow: index + 1 })))
+export function cleanNamesFromText(text: string, fieldLabels: readonly string[] = []): NameCleaningResult {
+  const rows = text.replace(/^\uFEFF/, '').split(/\r?\n/)
+  const hasMultipleColumns = fieldLabels.length > 1 || rows.some((row) => row.includes('\t'))
+  return cleanNameValues(rows.map((row, index) => {
+    const values = row.split('\t')
+    if (!hasMultipleColumns) return { value: row, sourceRow: index + 1 }
+    const fieldCount = Math.max(values.length, fieldLabels.length)
+    const fields = Array.from({ length: fieldCount }, (_, columnIndex) => ({
+      label: fieldLabels[columnIndex] ?? `字段 ${columnIndex + 1}`,
+      value: values[columnIndex] ?? '',
+    }))
+    return { value: values[0] ?? '', fields, sourceRow: index + 1 }
+  }))
 }
 
-export function cleanNamesFromTable(table: ParsedTable, nameColumnIndex: number, classColumnIndex?: number): NameCleaningResult {
+export function cleanNamesFromTable(table: ParsedTable, selectedColumnIndexes: readonly number[]): NameCleaningResult
+export function cleanNamesFromTable(table: ParsedTable, nameColumnIndex: number, classColumnIndex?: number): NameCleaningResult
+export function cleanNamesFromTable(table: ParsedTable, nameColumnIndexOrIndexes: number | readonly number[], classColumnIndex?: number): NameCleaningResult {
+  const columnIndexes = Array.isArray(nameColumnIndexOrIndexes) ? [...nameColumnIndexOrIndexes] : [nameColumnIndexOrIndexes, ...(classColumnIndex !== undefined && classColumnIndex !== nameColumnIndexOrIndexes ? [classColumnIndex] : [])]
+  const nameColumnIndex = columnIndexes[0] ?? -1
+  const resolvedClassColumnIndex = columnIndexes[1]
   return cleanNameValues(table.rows.map((row) => ({
     value: row.values[nameColumnIndex] ?? '',
-    ...(classColumnIndex !== undefined && classColumnIndex !== nameColumnIndex ? { className: row.values[classColumnIndex] ?? '' } : {}),
+    ...(resolvedClassColumnIndex !== undefined ? { className: row.values[resolvedClassColumnIndex] ?? '' } : {}),
+    fields: columnIndexes.map((columnIndex) => ({ label: table.columns[columnIndex] ?? `第 ${columnIndex + 1} 列`, value: row.values[columnIndex] ?? '' })),
     sourceRow: row.sourceRow,
   })))
 }

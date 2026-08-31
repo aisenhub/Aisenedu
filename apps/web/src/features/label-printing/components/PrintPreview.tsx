@@ -85,7 +85,7 @@ export function PrintPreview({ appearance, onScaleChange, pages, scale }: PrintP
 
       <div className="mt-5 min-w-0 overflow-auto rounded-xl border border-border bg-border/30 p-4 sm:p-6" data-testid="preview-scroll-container" ref={scrollContainerRef}>
         <div className="mx-auto" style={{ height: `${scaledHeight}mm`, width: `${scaledWidth}mm` }}>
-          <div ref={pageMeasureRef} style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+          <div ref={pageMeasureRef} style={{ height: `${page.heightMm}mm`, transform: `scale(${scale})`, transformOrigin: 'top left', width: `${page.widthMm}mm` }}>
             <LabelPageCanvas appearance={appearance} page={page} screenMode />
           </div>
         </div>

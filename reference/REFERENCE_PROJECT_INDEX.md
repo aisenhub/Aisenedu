@@ -44,6 +44,30 @@
 
 ## 已使用的参考
 
+## 2026-08-30｜姓名贴模板按内容行数分类
+
+- GitHub 搜索关键词：`A4 printable label template rows columns multi-line text`、`web label generator content lines template`、`GitHub printable labels layout columns rows`
+- 搜索范围/方向：浏览器端 A4 标签打印的模板参数、纸面列×行排列、单枚标签多行文本和不同内容密度下的版式选择。
+- 参考项目：`Rigel-Computer/Label-Print-Generator`、`labelle-org/labelle`、`eikowagenknecht/asn-label-generator`
+- 参考链接：https://github.com/Rigel-Computer/Label-Print-Generator；https://github.com/labelle-org/labelle；https://github.com/eikowagenknecht/asn-label-generator
+- 许可证：本次仅参考公开 README、产品边界和布局思路，未复制代码；实际复用代码前仍需以各仓库当前 LICENSE、NOTICE 和依赖许可证为准。
+- 查看内容：`Rigel-Computer/Label-Print-Generator` 的 A4 标签尺寸、列数、行数和浏览器打印预览说明；`labelle-org/labelle` 的多行文本节点和可调整内容布局说明；`eikowagenknecht/asn-label-generator` 的固定 A4 行列、标签尺寸、间距和页边距示例。
+- 可复用结论：标签模板应同时描述物理标签尺寸、纸面列×行、间距和内容承载能力；多行内容需要独立于纸面行数表达，不能用自动换行替代明确的内容语义。
+- Aisenedu 采用方案：模板卡片按一至四行内容分类，分别配套 A4 4×10、3×8、2×6、2×5 的默认尺寸与排列；保留用户后续按实物测量微调的 mm 参数，并将导入字段上限控制为四行内容。
+- 不采用内容及取舍理由：不复制第三方模板代码、画布或打印实现；不继续把模板主分类写成单纯的列×行，避免教师无法从模板名称判断姓名、班级、备注等字段能否放入同一枚标签。
+
+## 2026-08-30｜姓名贴表格导入后的多行多列编辑
+
+- GitHub 搜索关键词：`React CSV importer tab-delimited textarea multi-column open source`、`CSV import preview map columns React mature library`、`Papa Parse CSV parsing worker header GitHub`
+- 搜索范围/方向：浏览器端 CSV/TSV 分隔文本解析、导入列映射、导入后编辑与确认、表格数据在 React 表单中的保真回填。
+- 参考项目：`mholt/PapaParse`、`tableflowhq/csv-import`、`beamworks/react-csv-importer`、`soldforaloss/ceesvee`
+- 参考链接：https://github.com/mholt/PapaParse；https://github.com/tableflowhq/csv-import；https://github.com/beamworks/react-csv-importer；https://github.com/soldforaloss/ceesvee
+- 许可证：Papa Parse 为 MIT；Tableflow CSV Import 的仓库许可证需以仓库当前 LICENSE 为准，本次只参考 README 流程；`react-csv-importer` 已归档且本次只参考 README，未复制代码；CEESVEE 的许可证和桌面产品边界不作为本次 Web 运行时依赖依据。
+- 查看内容：Papa Parse README 中的分隔符、表头、本地解析和反向序列化能力；Tableflow 的列模板与完成回调；react-csv-importer 的上传、原始预览、列映射和确认流程；CEESVEE 的 Tab/CSV 分隔符识别和记录编辑思路。
+- 可复用结论：多列文本应保留“换行=记录、Tab=字段”的稳定表示；导入流程应先完成列映射，再允许用户编辑，最后显式确认；字段标题需要与列值分开保存，避免回填时丢失列语义。
+- Aisenedu 采用方案：导入确认后将已选字段值以 Tab 分隔、每条记录以换行分隔回填顶部编辑框；编辑框确认时按相同规则重新解析，并沿用本次导入的字段标题；导入按钮置于“使用这份名单”之前，支持“先导入、再修改、后确认”和直接输入两种路径。
+- 不采用内容及取舍理由：不引入完整 CSV 导入 UI 或表格编辑器，避免额外依赖、样式冲突和首屏负担；不把逗号作为手动编辑框的列分隔符，避免与姓名/备注中的自然逗号冲突；不上传或持久化学生数据。
+
 ## 2026-08-29｜姓名贴班级与姓名双字段导入
 
 - GitHub 搜索关键词：`React printable labels multiple fields name class`、`React CSV column mapping multiple fields`、`React spreadsheet import optional fields`

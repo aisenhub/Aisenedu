@@ -2,6 +2,7 @@ import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { LabelPageCanvas } from './LabelPageCanvas'
 import { createPageLayouts } from '../utils/layout'
+import { asMm } from '../types'
 import { createDefaultDraft, DEFAULT_APPEARANCE } from '../utils/templatePresets'
 
 describe('姓名贴画布', () => {
@@ -14,5 +15,62 @@ describe('姓名贴画布', () => {
     expect(screen.container.querySelector('img')?.getAttribute('src')).toBe('blob:http://localhost/background')
     expect(print.container.querySelector('img')?.getAttribute('src')).toBe(screen.container.querySelector('img')?.getAttribute('src'))
     expect(screen.container.querySelectorAll('.label-text br')).toHaveLength(1)
+  })
+
+  it('按外框和内框设置绘制双层边框', () => {
+    const draft = createDefaultDraft()
+    const pages = createPageLayouts([{ id: 'student-1', value: '测试姓名', className: '一年级', sourceRow: 1, duplicateCount: 1 }], draft.paper, draft.layout)
+    const appearance = { ...DEFAULT_APPEARANCE, outerBorderVisible: false, innerBorderStyle: 'dashed' as const }
+    const screen = render(<LabelPageCanvas appearance={appearance} page={pages[0]} screenMode />)
+    const filledCell = screen.container.querySelector('.label-cell-filled') as HTMLElement
+    const innerFrame = filledCell.firstElementChild?.firstElementChild as HTMLElement
+
+    expect(filledCell.style.padding).toBe('0mm')
+    expect(filledCell.style.alignItems).toBe('stretch')
+    expect(innerFrame.style.borderStyle).toBe('dashed')
+    expect(innerFrame.style.borderColor).toBe('rgb(148, 163, 184)')
+  })
+
+  it('字号变大时先压缩间距，仍不足才自动缩小字号', () => {
+    const draft = createDefaultDraft()
+    const pages = createPageLayouts([{ id: 'student-1', value: '测试姓名', className: '一年级', sourceRow: 1, duplicateCount: 1 }], draft.paper, draft.layout)
+    const appearance = { ...DEFAULT_APPEARANCE, fontSizePt: 36 }
+    const screen = render(<LabelPageCanvas appearance={appearance} page={pages[0]} screenMode />)
+    const innerFrame = (screen.container.querySelector('.label-cell-filled')?.firstElementChild?.firstElementChild) as HTMLElement
+
+    expect(Number.parseFloat(innerFrame.style.fontSize)).toBeLessThan(36)
+    expect(innerFrame.style.padding).toBe('1mm')
+  })
+
+  it('在色带和内框之间保留两倍内框线宽的间距', () => {
+    const draft = createDefaultDraft()
+    const pages = createPageLayouts([{ id: 'student-1', value: '测试姓名', className: '一年级', sourceRow: 1, duplicateCount: 1 }], draft.paper, draft.layout)
+    const screen = render(<LabelPageCanvas appearance={DEFAULT_APPEARANCE} page={pages[0]} screenMode />)
+    const filledCell = screen.container.querySelector('.label-cell-filled') as HTMLElement
+    const innerShell = filledCell.firstElementChild as HTMLElement
+
+    expect(innerShell.style.padding).toBe('0.4mm')
+  })
+
+  it('字段为空时保留原字段行位，便于后续手写内容', () => {
+    const draft = createDefaultDraft()
+    const pages = createPageLayouts([{ id: 'student-1', value: '六(7)班', fields: [{ label: '姓名', value: '' }, { label: '班级', value: '六(7)班' }], sourceRow: 1, duplicateCount: 1 }], draft.paper, draft.layout)
+    const screen = render(<LabelPageCanvas appearance={DEFAULT_APPEARANCE} page={pages[0]} screenMode />)
+    const lines = screen.container.querySelectorAll('.label-text > span')
+
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toHaveTextContent('姓名：')
+    expect(lines[1]).toHaveTextContent('班级：六(7)班')
+    expect(screen.container.querySelectorAll('.label-text br')).toHaveLength(1)
+  })
+
+  it('关闭四周等宽后按四边宽度绘制色带', () => {
+    const draft = createDefaultDraft()
+    const pages = createPageLayouts([{ id: 'student-1', value: '测试姓名', className: '一年级', sourceRow: 1, duplicateCount: 1 }], draft.paper, draft.layout)
+    const appearance = { ...DEFAULT_APPEARANCE, outerBorderUniform: false, outerBorderWidths: { topMm: asMm(1), rightMm: asMm(2), bottomMm: asMm(3), leftMm: asMm(4) } }
+    const screen = render(<LabelPageCanvas appearance={appearance} page={pages[0]} screenMode />)
+    const filledCell = screen.container.querySelector('.label-cell-filled') as HTMLElement
+
+    expect(filledCell.style.padding).toBe('1mm 2mm 3mm 4mm')
   })
 })
