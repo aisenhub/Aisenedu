@@ -1,4 +1,4 @@
-import { AlertTriangle, ClipboardX, Printer, UsersRound } from 'lucide-react'
+import { AlertTriangle, ClipboardX, UsersRound } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '../../../components/ui/button'
@@ -29,8 +29,6 @@ const FIELD_TARGETS: Partial<Record<LayoutField, string>> = {
 export function LabelPrintingWorkspace() {
   const draft = useLabelPrintingStore((state) => state.draft)
   const previewScale = useLabelPrintingStore((state) => state.previewScale)
-  const printStatus = useLabelPrintingStore((state) => state.printStatus)
-  const printError = useLabelPrintingStore((state) => state.printError)
   const formErrors = useLabelPrintingStore((state) => state.formErrors)
   const setNames = useLabelPrintingStore((state) => state.setNames)
   const setImportFieldConfig = useLabelPrintingStore((state) => state.setImportFieldConfig)
@@ -99,10 +97,10 @@ export function LabelPrintingWorkspace() {
   return (
     <LabelPrintingDraftProvider>
       <div className="space-y-6">
-      <header className="flex flex-col justify-between gap-5 border-b border-border pb-6 sm:flex-row sm:items-end">
+      <header className="flex flex-col justify-between gap-4 border-b border-border pb-4 sm:flex-row sm:items-end">
         <div>
-          <h1 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-3xl font-semibold tracking-tight text-text sm:text-4xl"><span>学生姓名贴</span><span className="inline-flex translate-y-[-0.1em] items-center rounded-md border border-primary/20 bg-primary/5 px-2 py-1 font-serif text-sm font-medium tracking-normal text-primary sm:text-base">测试版</span></h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-text-muted">导入学生姓名，也可以同时带上班级，在浏览器内完成排版、真实尺寸预览和 A4 打印。项目内容会优先保存在本地，不会上传到网络。</p>
+          <h1 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-3xl font-semibold tracking-tight text-text sm:text-4xl"><span>标签贴</span><span className="inline-flex translate-y-[-0.1em] items-center rounded-md border border-primary/20 bg-primary/5 px-2 py-1 font-serif text-sm font-medium tracking-normal text-primary sm:text-base">测试版</span></h1>
+          <p className="mt-2 max-w-2xl text-base leading-7 text-text-muted">导入多列数据，在浏览器内完成排版、真实尺寸预览和 A4 打印。</p>
         </div>
         <div className="flex items-center gap-3 text-sm text-text-muted" aria-label="当前工作台状态"><span className="inline-flex items-center gap-1.5 rounded-full bg-surface-raised px-3 py-2"><UsersRound aria-hidden="true" className="size-4" />{draft.names.length} 人</span><span className="rounded-full bg-surface-raised px-3 py-2">{pages.length} 页</span></div>
       </header>
@@ -121,11 +119,10 @@ export function LabelPrintingWorkspace() {
           {activeStep === 1 ? <LabelImportPanel onClearRequest={() => setClearOpen(true)} /> : null}
           {activeStep === 2 ? <LabelTemplatePanel /> : null}
           {activeStep === 3 ? <LabelContentPanel /> : null}
-          {activeStep === 4 ? <PrintCalibrationPanel canPrint={canPrintCalibration} onPrintCalibration={() => calibrationPrinter.printDocument()} /> : null}
+          {activeStep === 4 ? <PrintCalibrationPanel canPrint={canPrintCalibration} canPrintLabels={canPrintLabels} onPrintCalibration={() => calibrationPrinter.printDocument()} onPrintLabels={handleLabelPrint} pageCount={pages.length} /> : null}
         </div>
 
         <div className="min-w-0 space-y-4 lg:sticky lg:top-6">
-          <section aria-labelledby="print-action-heading" className="rounded-2xl border border-primary/25 bg-primary/5 p-5 shadow-sm"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold text-primary">标签排版</p><h2 className="mt-1 text-lg font-semibold text-text" id="print-action-heading">准备好后打印姓名贴</h2><p className="mt-1 text-sm text-text-muted">{draft.names.length > 0 ? `${draft.names.length} 人 · ${pages.length} 页` : '导入名单后会显示页数和预览'}</p></div><Button disabled={!canPrintLabels || printStatus === 'printing'} onClick={handleLabelPrint} size="lg"><Printer aria-hidden="true" className="size-5" />{printStatus === 'printing' ? '正在准备打印…' : '打印姓名贴'}</Button></div><ul aria-label="打印前检查" className="mt-4 grid gap-1 text-sm text-text-muted sm:grid-cols-2"><li>{draft.names.length > 0 ? `名单：${draft.names.length} 人` : '名单：待导入'}</li><li>纸张：{draft.paper.size} · {draft.paper.orientation === 'portrait' ? '纵向' : '横向'}</li><li>页面：{pages.length} 页</li><li>{validation.valid && Object.keys(formErrors).length === 0 ? '排版参数：已通过检查' : '排版参数：待修正'}</li></ul>{!canPrintLabels ? <p className="mt-3 text-sm leading-6 text-error" role="status">{draft.names.length === 0 ? '请先进入“导入名单”添加姓名。' : '请进入“标签排版”修正参数后再打印。'}</p> : null}{printError ? <div className="mt-4 flex items-start gap-2 rounded-lg border border-error/25 bg-error/5 p-4 text-sm leading-6 text-error" role="alert"><AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />{printError}<button className="ml-auto cursor-pointer font-semibold underline underline-offset-2" onClick={() => setPrintStatus('idle')} type="button">关闭</button></div> : null}<div className="mt-4 border-t border-primary/20 pt-4"><p className="text-xs leading-5 text-text-muted">打印对话框请选择 100% 缩放，并按需开启背景图形。</p></div></section>
           <PrintPreview appearance={draft.appearance} onScaleChange={setPreviewScale} pages={pages} scale={previewScale} />
           {hasLabelOverflow ? <section aria-labelledby="overflow-warning-title" className="rounded-xl border border-error/30 bg-error/5 p-4 text-sm leading-6 text-error"><h2 className="font-semibold" id="overflow-warning-title">部分字段可能在标签内被截断</h2><p className="mt-1">可减小字号、在“名单与导入”的字段设置中关闭不需要的标题，或调整标签尺寸与网格参数。</p><div className="mt-3 flex flex-wrap gap-2"><Button onClick={() => setActiveStep(3)} size="sm" type="button" variant="secondary">减小字号</Button><Button onClick={() => setActiveStep(1)} size="sm" type="button" variant="secondary">调整字段</Button><Button onClick={() => setActiveStep(2)} size="sm" type="button" variant="secondary">调整标签排版</Button></div></section> : null}
           <div aria-hidden="true" ref={labelPrintRef}>{canPrintLabels ? <PrintableLabelDocument appearance={draft.appearance} pages={pages} /> : null}</div>

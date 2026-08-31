@@ -5,8 +5,8 @@ import { LabelPrintingWorkspace } from '../features/label-printing'
 
 export default function NameLabelPrintingPage() {
   return (
-    <section className="mx-auto min-h-[70vh] max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
-      <Link className="mb-6 inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-text-muted hover:text-primary" to={HOME_ROUTE}>
+    <section className="mx-auto min-h-[70vh] max-w-7xl px-5 py-6 sm:px-8 sm:py-8">
+      <Link className="mb-3 inline-flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-text-muted hover:text-primary" to={HOME_ROUTE}>
           <ArrowLeft aria-hidden="true" className="size-4" />
           返回工具首页
       </Link>

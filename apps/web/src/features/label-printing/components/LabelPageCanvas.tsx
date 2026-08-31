@@ -1,5 +1,5 @@
-import type { CSSProperties } from 'react'
-import { asMm, LABEL_FONT_FAMILIES, type LabelAppearance, type PageLayout } from '../types'
+import type { CSSProperties, KeyboardEvent } from 'react'
+import { asMm, LABEL_FONT_FAMILIES, type LabelAppearance, type LayoutCell, type PageLayout } from '../types'
 import { getMaskColor, INNER_BORDER_GAP_MM, INNER_BORDER_WIDTH_MM } from '../utils/appearance'
 import { getLabelTextLayout, getSafeLineHeight } from '../utils/textFit'
 
@@ -7,9 +7,11 @@ type LabelPageCanvasProps = Readonly<{
   page: PageLayout
   appearance: LabelAppearance
   screenMode?: boolean
+  onCellClick?: (cell: LayoutCell) => void
+  selectedCellId?: string
 }>
 
-export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelPageCanvasProps) {
+export function LabelPageCanvas({ appearance, onCellClick, page, screenMode = false, selectedCellId }: LabelPageCanvasProps) {
   return (
     <div
       aria-label={`第 ${page.pageIndex + 1} 页，${page.cells.filter((cell) => cell.kind === 'label').length} 个姓名贴`}
@@ -26,6 +28,13 @@ export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelP
         }
         if (cell.kind === 'empty') {
           return <div aria-hidden="true" className={screenMode ? 'label-cell label-cell-empty' : 'label-cell label-cell-empty print-empty-cell'} key={cell.id} style={cellStyle} />
+        }
+        const isInteractive = screenMode && onCellClick !== undefined
+        const handleCellKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+          if (isInteractive && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault()
+            onCellClick(cell)
+          }
         }
         const labelParts = cell.student?.fields?.length
           ? cell.student.fields.map((field) => {
@@ -45,8 +54,13 @@ export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelP
         const textLayout = getLabelTextLayout({ appearance, heightMm: cell.heightMm, innerBorderGapMm: innerBorderGap, innerBorderWidthMm: innerBorderWidth, lines: labelParts, outerBorderWidthMm: effectiveOuterBorderWidth, widthMm: cell.widthMm })
         return (
           <div
-            className="label-cell label-cell-filled"
+            className={'label-cell label-cell-filled' + (isInteractive ? ' cursor-pointer' : '') + (selectedCellId === cell.id ? ' ring-2 ring-primary ring-inset' : '')}
             key={cell.id}
+            aria-label={isInteractive ? `查看第 ${cell.row + 1} 行第 ${cell.column + 1} 列标签${cell.student ? `：${cell.student.value}` : ''}` : undefined}
+            data-label-cell-id={cell.id}
+            onClick={isInteractive ? () => onCellClick(cell) : undefined}
+            onKeyDown={isInteractive ? handleCellKeyDown : undefined}
+            role={isInteractive ? 'button' : undefined}
             style={{
               ...cellStyle,
               alignItems: 'stretch',
@@ -57,6 +71,7 @@ export function LabelPageCanvas({ appearance, page, screenMode = false }: LabelP
               overflow: 'hidden',
               padding: `${effectiveOuterBorderWidth}mm`,
             }}
+            tabIndex={isInteractive ? 0 : undefined}
           >
             <div style={{ alignSelf: 'stretch', backgroundColor: appearance.backgroundColor, borderRadius: `${Math.max(0, appearance.borderRadiusMm - outerBorderInset)}mm`, boxSizing: 'border-box', display: 'flex', flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden', padding: `${innerBorderGap}mm` }}>
               <div

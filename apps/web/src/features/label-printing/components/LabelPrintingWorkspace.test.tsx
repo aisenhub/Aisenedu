@@ -24,12 +24,19 @@ describe('姓名贴工作台流程', () => {
     expect(screen.getByRole('button', { name: '标签排版：A4 · 4×13，已完成' })).toBeVisible()
     expect(screen.getByText('内容样式')).toBeVisible()
     expect(screen.getByText('打印校准')).toBeVisible()
-    await user.type(screen.getByLabelText('粘贴或输入姓名'), '林小满\n周知行')
+    const textarea = screen.getByLabelText('粘贴或输入名单')
+    expect(textarea).toHaveAttribute('placeholder', '林小满\t一年级1班\n周知行\t一年级1班\n陈安然\t一年级2班')
+    expect(screen.getByText(/导入 CSV\/XLSX 时，请确保首行包含列标题/)).toBeVisible()
+    await user.type(textarea, '林小满\n周知行')
     await user.click(screen.getByRole('button', { name: '使用这份名单' }))
 
     expect(within(screen.getByLabelText('当前工作台状态')).getByText('2 人')).toBeVisible()
     expect(screen.getByText('第 1 / 1 页 · 页面按 mm 排版')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: /^打印校准：/ }))
     expect(screen.getByRole('button', { name: '打印姓名贴' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: /校准设置/ })).toHaveAttribute('aria-expanded', 'false')
+    await user.click(screen.getByRole('button', { name: /校准设置/ }))
+    expect(screen.getByLabelText('X 偏移')).toBeVisible()
     await user.click(screen.getByRole('button', { name: /^导入名单：/ }))
     expect(within(screen.getByRole('list', { name: '姓名预览' })).getByText('林小满')).toBeVisible()
   })
@@ -37,7 +44,7 @@ describe('姓名贴工作台流程', () => {
   it('编辑框按 Tab 插入列分隔符而不切换到下一个控件', async () => {
     const user = userEvent.setup()
     renderWorkspace()
-    const textarea = screen.getByLabelText('粘贴或输入姓名')
+    const textarea = screen.getByLabelText('粘贴或输入名单')
 
     await user.type(textarea, '林小满')
     await user.keyboard('{Tab}')
@@ -84,7 +91,7 @@ describe('姓名贴工作台流程', () => {
 
     await user.click(screen.getByRole('button', { name: '确认字段选择' }))
 
-    expect(screen.getByLabelText('粘贴或输入姓名')).toHaveValue('一年级1班\t林小满\t01\n一年级1班\t周知行\t02')
+    expect(screen.getByLabelText('粘贴或输入名单')).toHaveValue('一年级1班\t林小满\t01\n一年级1班\t周知行\t02')
     expect(screen.getByRole('button', { name: '更新名单' })).toBeVisible()
     expect(screen.getByRole('heading', { name: '字段设置' })).toBeVisible()
     expect(screen.getByRole('heading', { name: '当前名单' })).toBeVisible()
@@ -161,7 +168,7 @@ describe('姓名贴工作台流程', () => {
   it('清空名单需要确认，确认后只清除内存名单', async () => {
     const user = userEvent.setup()
     renderWorkspace()
-    await user.type(screen.getByLabelText('粘贴或输入姓名'), '陈安然')
+    await user.type(screen.getByLabelText('粘贴或输入名单'), '陈安然')
     await user.click(screen.getByRole('button', { name: '使用这份名单' }))
     await user.click(screen.getByRole('button', { name: '清空名单' }))
 
@@ -170,7 +177,7 @@ describe('姓名贴工作台流程', () => {
     await user.click(within(dialog).getByRole('button', { name: '清空名单' }))
     expect(within(screen.getByLabelText('当前工作台状态')).getByText('0 人')).toBeVisible()
     expect(useLabelPrintingStore.getState().draft.names).toEqual([])
-    expect(screen.getByLabelText('粘贴或输入姓名')).toHaveValue('')
+    expect(screen.getByLabelText('粘贴或输入名单')).toHaveValue('')
     expect(JSON.parse(window.localStorage.getItem('aisenedu.label-project.v1') ?? '{}').state.draft.names).toEqual([])
     expect(window.sessionStorage.length).toBe(0)
   })
@@ -178,7 +185,7 @@ describe('姓名贴工作台流程', () => {
   it('非法排版输入显示字段错误并保留最后有效预览', async () => {
     const user = userEvent.setup()
     renderWorkspace()
-    await user.type(screen.getByLabelText('粘贴或输入姓名'), '林小满')
+    await user.type(screen.getByLabelText('粘贴或输入名单'), '林小满')
     await user.click(screen.getByRole('button', { name: '使用这份名单' }))
     await user.click(screen.getByRole('button', { name: /标签排版：A4 · 4×13，已完成/ }))
     const preview = screen.getByText('第 1 / 1 页 · 页面按 mm 排版')
@@ -188,6 +195,7 @@ describe('姓名贴工作台流程', () => {
 
     expect(screen.getByText(/横向网格需要/)).toBeVisible()
     expect(preview).toBeVisible()
+    await user.click(screen.getByRole('button', { name: /^打印校准：/ }))
     expect(screen.getByRole('button', { name: '打印姓名贴' })).toBeDisabled()
     expect(useLabelPrintingStore.getState().draft.layout.labelWidthMm).toBe(10)
   })
@@ -195,7 +203,7 @@ describe('姓名贴工作台流程', () => {
   it('姓名保存在本地，但不进入 URL', async () => {
     const user = userEvent.setup()
     renderWorkspace()
-    await user.type(screen.getByLabelText('粘贴或输入姓名'), '隐私校验姓名')
+    await user.type(screen.getByLabelText('粘贴或输入名单'), '隐私校验姓名')
     await user.click(screen.getByRole('button', { name: '使用这份名单' }))
 
     expect(window.location.href).not.toContain(encodeURIComponent('隐私校验姓名'))

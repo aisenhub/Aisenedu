@@ -169,7 +169,7 @@ export const useLabelPrintingStore = create<LabelPrintingState>()(persist((set) 
     if (previousUrl && previousUrl !== image?.objectUrl && typeof URL !== 'undefined') URL.revokeObjectURL(previousUrl)
     return { draft: { ...state.draft, appearance: { ...state.draft.appearance, backgroundImage: image, backgroundMode: image ? 'image' : 'solid' } } }
   }),
-  setPreviewScale: (scale) => set({ previewScale: Math.min(1.2, Math.max(0.45, scale)) }),
+  setPreviewScale: (scale) => set({ previewScale: Math.min(1.2, Math.max(0.1, scale)) }),
   setPrintStatus: (status, error = null) => set({ printStatus: status, printError: error ?? null }),
   setFormErrors: (errors) => set({ formErrors: { ...errors } }),
   resetDraft: () => {
