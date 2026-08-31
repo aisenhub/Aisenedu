@@ -21,7 +21,7 @@ describe('姓名贴工作台流程', () => {
 
     expect(screen.getByRole('heading', { name: '制作进度' })).toBeVisible()
     expect(screen.getAllByText('标签排版')[0]).toBeVisible()
-    expect(screen.getByRole('button', { name: '标签排版：A4 · 3×8，已完成' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '标签排版：A4 · 4×13，已完成' })).toBeVisible()
     expect(screen.getByText('内容样式')).toBeVisible()
     expect(screen.getByText('打印校准')).toBeVisible()
     await user.type(screen.getByLabelText('粘贴或输入姓名'), '林小满\n周知行')
@@ -51,7 +51,7 @@ describe('姓名贴工作台流程', () => {
     renderWorkspace()
 
     expect(screen.queryByText('快捷排版')).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /标签排版：A4 · 3×8，已完成/ }))
+    await user.click(screen.getByRole('button', { name: /标签排版：A4 · 4×13，已完成/ }))
     expect(screen.getByLabelText('纸张类型')).toHaveTextContent('无内切')
     fireEvent.keyDown(screen.getByLabelText('纸张类型'), { key: 'ArrowDown' })
     await user.click(screen.getByRole('option', { name: '内切有花边' }))
@@ -140,7 +140,7 @@ describe('姓名贴工作台流程', () => {
     await user.click(within(dialog).getByRole('button', { name: '清空名单' }))
     expect(within(screen.getByLabelText('当前工作台状态')).getByText('0 人')).toBeVisible()
     expect(useLabelPrintingStore.getState().draft.names).toEqual([])
-    expect(JSON.parse(window.localStorage.getItem('aisenkit.label-project.v1') ?? '{}').state.draft.names).toEqual([])
+    expect(JSON.parse(window.localStorage.getItem('aisenedu.label-project.v1') ?? '{}').state.draft.names).toEqual([])
     expect(window.sessionStorage.length).toBe(0)
   })
 
@@ -149,7 +149,7 @@ describe('姓名贴工作台流程', () => {
     renderWorkspace()
     await user.type(screen.getByLabelText('粘贴或输入姓名'), '林小满')
     await user.click(screen.getByRole('button', { name: '使用这份名单' }))
-    await user.click(screen.getByRole('button', { name: /标签排版：A4 · 3×8，已完成/ }))
+    await user.click(screen.getByRole('button', { name: /标签排版：A4 · 4×13，已完成/ }))
     const preview = screen.getByText('第 1 / 1 页 · 页面按 mm 排版')
     const width = screen.getByLabelText('C · 标签宽度')
     await user.clear(width)
@@ -168,7 +168,7 @@ describe('姓名贴工作台流程', () => {
     await user.click(screen.getByRole('button', { name: '使用这份名单' }))
 
     expect(window.location.href).not.toContain(encodeURIComponent('隐私校验姓名'))
-    expect(window.localStorage.getItem('aisenkit.label-project.v1')).toContain('隐私校验姓名')
+    expect(window.localStorage.getItem('aisenedu.label-project.v1')).toContain('隐私校验姓名')
     expect(window.sessionStorage.length).toBe(0)
     expect(useLabelPrintingStore.getState().draft.names[0]?.value).toBe('隐私校验姓名')
   })

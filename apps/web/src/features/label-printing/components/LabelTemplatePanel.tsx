@@ -82,7 +82,7 @@ export function LabelTemplatePanel() {
       applyConfig(result.config)
       setSavedConfigs((current) => current.some((item) => item.name === result.config.name) ? current : [...current, result.config])
     } catch {
-      setConfigMessage('配置文件无法读取，请选择 Aisenkit 导出的 JSON 文件。')
+      setConfigMessage('配置文件无法读取，请选择 Aisenedu 导出的 JSON 文件。')
     }
   }
 

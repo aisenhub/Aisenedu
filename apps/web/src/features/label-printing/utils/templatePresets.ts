@@ -59,7 +59,7 @@ export const LABEL_TEMPLATE_PRESETS: readonly LabelTemplatePreset[] = [
   },
 ]
 
-export const DEFAULT_TEMPLATE_ID = 'a4-3x8-2-lines'
+export const DEFAULT_TEMPLATE_ID = 'a4-4x10-1-line'
 
 export const DEFAULT_APPEARANCE: LabelAppearance = {
   fontPreset: 'systemSans',

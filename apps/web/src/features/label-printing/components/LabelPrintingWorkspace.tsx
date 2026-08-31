@@ -49,8 +49,8 @@ export function LabelPrintingWorkspace() {
   const [activeStep, setActiveStep] = useState<LabelWorkflowStep>(1)
   const [hasLabelOverflow, setHasLabelOverflow] = useState(false)
 
-  const labelPrinter = useNameLabelPrint({ canPrint: canPrintLabels, contentRef: labelPrintRef, documentTitle: 'Aisenkit_学生姓名贴', paper: draft.paper })
-  const calibrationPrinter = useNameLabelPrint({ canPrint: canPrintCalibration, contentRef: calibrationPrintRef, documentTitle: 'Aisenkit_姓名贴校准页', paper: draft.paper })
+  const labelPrinter = useNameLabelPrint({ canPrint: canPrintLabels, contentRef: labelPrintRef, documentTitle: 'Aisenedu_学生姓名贴', paper: draft.paper })
+  const calibrationPrinter = useNameLabelPrint({ canPrint: canPrintCalibration, contentRef: calibrationPrintRef, documentTitle: 'Aisenedu_姓名贴校准页', paper: draft.paper })
 
   useEffect(() => {
     if (showValidationAlert) validationAlertRef.current?.focus()

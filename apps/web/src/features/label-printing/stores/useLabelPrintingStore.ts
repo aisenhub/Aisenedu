@@ -3,7 +3,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import { asMm, type FieldErrors, type LabelAppearance, type LabelLayout, type LabelProjectDraft, type LocalBackgroundImage, type PaperSettings, type StudentName } from '../types'
 import { createDefaultDraft, DEFAULT_TEMPLATE_ID, getTemplatePreset } from '../utils/templatePresets'
 
-export const LABEL_PROJECT_STORAGE_KEY = 'aisenkit.label-project.v1'
+export const LABEL_PROJECT_STORAGE_KEY = 'aisenedu.label-project.v1'
 
 type PrintStatus = 'idle' | 'printing' | 'error'
 
