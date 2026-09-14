@@ -8,11 +8,11 @@
 - 本次范围：软件主链、中文 PDF 字体资产、校准 Profile UI、旧 renderer/offset 清理和自动化验证已完成；真实打印机重复性与物理验收仍未完成。
 - GitHub 仓库：`aisenhub/Aisenedu`（执行时核对 remote）。
 - 本地仓库绝对路径：`E:\Projects\Aisenedu`。
-- 工作分支：`codex/name-label-printing-v2-upgrade`。
+- 实施分支：`codex/name-label-printing-v2-upgrade`；已合并分支：`main`。
 - 起始 commit：`2198471feead3e3ec2891c0ebf001b4ae1d48ca0`。
 - 研究期远端 main 参考 SHA：`2198471feead3e3ec2891c0ebf001b4ae1d48ca0`（仅参考，不能替代执行时读取）。
 - 初始 `git status --short`：`?? docs/plans/`；该计划目录为用户已有文件，未删除或覆盖。
-- 已有未提交修改及归属：除用户已有的 `docs/plans/` 外，本轮修改均为本次 v3.1 实施内容。
+- 初始未提交修改及归属：除用户已有的 `docs/plans/` 外，工作树中的本轮修改均为本次 v3.1 实施内容。
 - Node/pnpm/OS/浏览器环境：Windows PowerShell；Node `v24.19.0`；pnpm `v11.24.0`；Playwright Chromium。
 - 已知基线失败：无；基线 build、lint、Vitest 均通过。
 - 架构文档实际本地路径：`docs/NAME_LABEL_PRINTING_ARCHITECTURE.md`。
@@ -23,13 +23,13 @@
 
 | 阶段 | 名称 | 状态 | 已完成内容 | 剩余/前置 | 代码 commit | Push | GitHub link |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0 | 基线、隐私、研究 Gate | 验收通过待推送 | 基线核对、隐私迁移、GitHub 参考记录、PDF/CJK 能力 Gate 记录 | 无软件剩余；物理验证另计 | 未提交 | 未执行 | — |
-| 1 | Domain / PhysicalTemplate / Layout | 验收通过待推送 | PhysicalTemplate、origin/pitch、纯分页与兼容迁移 | 物理模板仍需真实纸材验证 | 未提交 | 未执行 | — |
-| 2 | TextLayout / Scene | 验收通过待推送 | 字体测量、TextLayout、Scene、共享 asset repository、overflow 诊断 | 无软件剩余；CJK 资产已接入 | 未提交 | 未执行 | — |
-| 3 | SVG Preview / Browser fallback | 验收通过待推送 | SVG 预览、clip、背景图、Browser Print 明确兼容路径 | 需真实浏览器打印对照 | 未提交 | 未执行 | — |
-| 4 | Vector PDF | 验收通过待推送 | ASCII/CJK Scene→pdf-lib 向量 PDF、精确 MediaBox、PrintScaling.None、失败恢复、字体嵌入测试 | 真实打印仍未验证 | 未提交 | 未执行 | — |
-| 5 | Diagnostic Calibration | 进行中 | Device Geometry、Gate 0/1/2、translation→affine 拟合、Profile scope 与 PDF 应用 | 真实打印机至少 3 次重复测量未完成 | 未提交 | 未执行 | — |
-| 6 | Output cutover / cleanup / final validation | 进行中 | PDF 主 CTA、Browser Print fallback、旧路径清理、文档/隐私/响应式/E2E 回归、ASCII/CJK PDF benchmark、按需加载网络测试 | 双打印机物理验收未完成；Edge/系统打印对话框未自动化 | 未提交 | 未执行 | — |
+| 0 | 基线、隐私、研究 Gate | 已交付 | 基线核对、隐私迁移、GitHub 参考记录、PDF/CJK 能力 Gate 记录 | 无软件剩余；物理验证另计 | `a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c` | 已推送并合并 | [commit](https://github.com/aisenhub/Aisenedu/commit/a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c) |
+| 1 | Domain / PhysicalTemplate / Layout | 进行中 | PhysicalTemplate、origin/pitch、纯分页与兼容迁移 | 物理模板仍需真实纸材验证 | `a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c` | 已推送并合并 | [commit](https://github.com/aisenhub/Aisenedu/commit/a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c) |
+| 2 | TextLayout / Scene | 已交付 | 字体测量、TextLayout、Scene、共享 asset repository、overflow 诊断 | 无软件剩余；CJK 资产已接入 | `a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c` | 已推送并合并 | [commit](https://github.com/aisenhub/Aisenedu/commit/a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c) |
+| 3 | SVG Preview / Browser fallback | 进行中 | SVG 预览、clip、背景图、Browser Print 明确兼容路径 | 需真实浏览器打印对照 | `a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c` | 已推送并合并 | [commit](https://github.com/aisenhub/Aisenedu/commit/a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c) |
+| 4 | Vector PDF | 进行中 | ASCII/CJK Scene→pdf-lib 向量 PDF、精确 MediaBox、PrintScaling.None、失败恢复、字体嵌入测试 | 真实打印仍未验证 | `a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c` | 已推送并合并 | [commit](https://github.com/aisenhub/Aisenedu/commit/a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c) |
+| 5 | Diagnostic Calibration | 进行中 | Device Geometry、Gate 0/1/2、translation→affine 拟合、Profile scope 与 PDF 应用 | 真实打印机至少 3 次重复测量未完成 | `a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c` | 已推送并合并 | [commit](https://github.com/aisenhub/Aisenedu/commit/a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c) |
+| 6 | Output cutover / cleanup / final validation | 进行中 | PDF 主 CTA、Browser Print fallback、旧路径清理、文档/隐私/响应式/E2E 回归、ASCII/CJK PDF benchmark、按需加载网络测试 | 双打印机物理验收未完成；Edge/系统打印对话框未自动化 | `a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c` | 已推送并合并 | [commit](https://github.com/aisenhub/Aisenedu/commit/a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c) |
 
 > “已交付” = 实施完成 + 该阶段必要验收实际通过 + 相关提交已成功 push 并确认远程包含。代码写完但没测、commit 没 push、或物理门槛尚未满足，都不能标“已交付”。
 
@@ -37,7 +37,7 @@
 
 ### Phase 0
 
-- 状态：验收通过待推送
+- 状态：已交付
 - 开始/结束日期：2026-09-14 / 2026-09-14
 - 实际修改文件：`stores/labelPrintSettingsStorage.ts`、`stores/useLabelPrintingStore.ts`、`reference/REFERENCE_PROJECT_INDEX.md`、本计划记录。
 - 已实现行为：只持久化纸张、布局、外观和模板选择；旧 v1 数据迁移时主动丢弃姓名、原始导入行、背景 object URL、起始格和 offset；补充 pdf-lib/fontkit 与 CJK 资产 Gate 结论。
@@ -50,7 +50,7 @@
 
 ### Phase 1
 
-- 状态：验收通过待推送
+- 状态：进行中
 - 实际修改文件：`domain/physicalTemplate.ts`、`layout/createPageLayouts.ts`、`utils/templateConfig.ts`、`components/LabelTemplatePanel.tsx`。
 - 已实现行为：模板采用 `originX/Y + pitchX/Y + label size + rows/columns`；布局只消费 mm 领域模型；UI 将 gap 派生展示为 X/Y 节距，并保留 v1 配置读取迁移。
 - 契约/迁移：新增 `PhysicalTemplate`/`LabelProject`；旧 `PaperSettings`/`LabelLayout` 作为兼容输入，不再作为几何真相。
@@ -61,7 +61,7 @@
 
 ### Phase 2
 
-- 状态：验收通过待推送
+- 状态：已交付
 - 实际修改文件：`text/fontRegistry.ts`、`text/measureText.ts`、`text/resolveTextLayout.ts`、`scene/types.ts`、`scene/buildPrintScene.ts`、`scene/assets.ts`、`scene/applyCalibration.ts`。
 - Text/Scene 契约：采用共享 `TextLayout` 和 `RenderScene`；每个 Scene 只创建一个 Canvas measurer；renderer 不再负责换行/字号拟合；FontAssetRegistry 已接入本地 CJK PDF asset。
 - 行为：预览、浏览器打印和 PDF 共享理想 Scene；背景图、遮罩、边框、文本和 overflow 都由 Scene 表达。
@@ -71,7 +71,7 @@
 
 ### Phase 3
 
-- 状态：验收通过待推送
+- 状态：进行中
 - 实际修改文件：`renderers/svg/renderSceneToSvg.ts`、`components/SvgPrintPreviewPage.tsx`、`components/PrintableSvgDocument.tsx`、`components/PrintPreview.tsx`、`components/PrintableCalibrationDocument.tsx`、`styles/print.css`、`hooks/useNameLabelPrint.ts`。
 - SVG/Preview/Browser Print：SVG 使用 mm viewBox 与显式 clip；浏览器打印降级为带说明的兼容模式；原页面仍保留稳定骨架和重试/错误提示。
 - 旧路径退出：删除无引用的 `LabelPageCanvas`、`PrintableLabelDocument`、旧 label-cell/calibration CSS；主预览/打印仅走 Scene/SVG。
@@ -80,7 +80,7 @@
 
 ### Phase 4
 
-- 状态：验收通过待推送
+- 状态：进行中
 - PDF 技术路线/库/版本：已验证并采用 `pdf-lib@1.17.1 + @pdf-lib/fontkit@1.1.1` 直接 Scene→PDF；PDF 页 MediaBox 精确由 mm 转换，ViewerPreferences 设置 `PrintScaling.None`。
 - 字体资产与许可证：`NotoSansSC-Regular.otf` 随应用分发，8,331,336 bytes，SHA-256 见 `apps/web/src/features/label-printing/assets/fonts/SOURCE.md`，附官方 OFL 1.1 文本；实际嵌入中文 Scene 后 PDF 可重新读取。
 - 实际修改文件：`renderers/pdf/renderSceneToPdf.ts`、`output/exportPdf.ts`、PDF 结构测试、`apps/web/package.json`、`pnpm-lock.yaml`。
@@ -313,17 +313,21 @@
 
 每阶段可以一条 code push + 一条 verification docs push。
 
-### 模板
+### 2026-09-14 — v3.1 软件提交与 main 合并
 
-- Phase：未开始
-- Branch：未开始
-- Code commit SHA：未开始
-- Commit message：未开始
-- Push command/result：未开始
-- Remote contains SHA：未验证
-- GitHub commit/branch link：未开始
-- Verification-record update commit：未开始
-- Push failure/retry：无（尚未执行）
+- Phase：Phase 0–6 软件实现（Phase 1/3/4/5/6 的实体打印门槛仍保持进行中）
+- Branch：`codex/name-label-printing-v2-upgrade` → `main`
+- Code commit SHA：`a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c`
+- Commit message：`feat: upgrade name label printing pipeline`
+- Push command/result：`git push -u origin codex/name-label-printing-v2-upgrade` 成功
+- Remote contains SHA：已验证；远端分支指向 `a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c`
+- GitHub commit/branch link：[feature commit](https://github.com/aisenhub/Aisenedu/commit/a5477b04f7261e2ecf54a2f23c7c289b32bb7d7c)，[feature branch](https://github.com/aisenhub/Aisenedu/tree/codex/name-label-printing-v2-upgrade)
+- Merge commit SHA：`20059ecadabbf663474c7286f93e95d908b7386c`
+- Merge/push command/result：`git merge --no-ff ...` 成功；`git push origin main` 成功
+- Remote `main` contains SHA：已验证；远端 `main` 指向 `20059ecadabbf663474c7286f93e95d908b7386c`
+- GitHub main link：[merge commit](https://github.com/aisenhub/Aisenedu/commit/20059ecadabbf663474c7286f93e95d908b7386c)，[main](https://github.com/aisenhub/Aisenedu/tree/main)
+- Verification-record update commit：本记录将在 main 上单独提交并随后推送。
+- Push failure/retry：无。
 
 ## 8. 交接信息
 
@@ -333,7 +337,7 @@
 - 必须先解决的问题：在用户提供/授权纸材和设备条件后，用至少两台普通打印机完成 Device Geometry 与 Template Overlay 对照，并记录驱动、进纸、介质和尺量数据。
 - 可以直接复用：`PhysicalTemplate → PageLayout → TextLayout/RenderScene → SVG/PDF` 主链、safe settings storage、Device Geometry v1、calibration fit/profile scope 和既有导入/UI/E2E。
 - 不应重复实施：不要恢复姓名持久化、不要让 renderer 重新排版、不要把校准写回模板、不要把 Browser Print 当作正式 PDF 主链。
-- 当前未提交修改及归属：本轮代码与文档修改均保留在工作树；用户已有 `docs/plans/` 未跟踪目录保留不动。
+- 当前未提交修改及归属：本轮代码与已选入交付的文档均已提交并推送；用户已有计划目录中未修改的原始文件仍保持未跟踪，未删除、未覆盖、未擅自纳入本次提交。
 - 需要用户决定事项：是否授权使用当前 Brother DCP-T426W 消耗纸张/墨水执行实体打印；并提供第二台普通打印机、目标标签纸材/供应商 SKU、进纸方式和测量结果后再冻结 calibration policy 阈值。
 
 ## 9. 记录一致性规则
