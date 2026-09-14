@@ -5,7 +5,7 @@ import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
 import { DEFAULT_APPEARANCE } from '../utils/templatePresets'
 import { APPEARANCE_COLOR_SWATCHES } from '../utils/appearancePresets'
 import { APPEARANCE_RANGES, getContrastRatio } from '../utils/appearance'
-import { getSafeLineHeight } from '../utils/textFit'
+import { getSafeLineHeight } from '../text/resolveTextLayout'
 import type { LabelAppearance } from '../types'
 import { AppearanceColorField } from './AppearanceColorField'
 import { AppearanceNumberField } from './AppearanceNumberField'
@@ -40,7 +40,11 @@ export function TypographySettingsSection() {
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <FieldLabel help="只使用本机字体，不会下载字体；未检测到楷体时自动回退为系统衬线字体。" htmlFor="font-family" label="字体" />
+          <FieldLabel
+            help="屏幕预览使用本机字体栈；正式 PDF 的中文使用应用内授权字体，未检测到楷体时屏幕回退为系统衬线字体。"
+            htmlFor="font-family"
+            label="字体"
+          />
           <Select onValueChange={(value) => updateAppearance({ fontPreset: value as LabelAppearance['fontPreset'] })} value={appearance.fontPreset}>
             <SelectTrigger id="font-family"><SelectValue /></SelectTrigger>
             <SelectContent><SelectItem value="systemSans">系统无衬线</SelectItem><SelectItem value="systemSerif">系统衬线</SelectItem><SelectItem value="kaiTi">楷体（未安装时自动回退）</SelectItem><SelectItem value="monospace">等宽字体</SelectItem></SelectContent>

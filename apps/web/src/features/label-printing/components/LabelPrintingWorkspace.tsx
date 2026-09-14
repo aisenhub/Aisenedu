@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../../../
 import { useNameLabelPrint } from '../hooks/useNameLabelPrint'
 import { LabelPrintingDraftProvider } from '../hooks/useLabelPrintingDraft'
 import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
-import { createPageLayouts } from '../utils/layout'
+import { createPageLayouts } from '../layout/createPageLayouts'
 import { validateLayout } from '../utils/validation'
 import { resolveFontPreset } from '../utils/font'
 import type { LayoutField } from '../types'
@@ -15,19 +15,28 @@ import { LabelImportPanel } from './LabelImportPanel'
 import { LabelTemplatePanel } from './LabelTemplatePanel'
 import { PrintCalibrationPanel } from './PrintCalibrationPanel'
 import { PrintableCalibrationDocument } from './PrintableCalibrationDocument'
-import { PrintableLabelDocument } from './PrintableLabelDocument'
+import { PrintableSvgDocument } from './PrintableSvgDocument'
 import { PrintPreview } from './PrintPreview'
 import { LabelWorkflowStepper, type LabelWorkflowStep } from './LabelWorkflowStepper'
+import { physicalTemplateFromDraft } from '../domain/physicalTemplate'
+import { buildPrintScene, sceneHasTextOverflow } from '../scene/buildPrintScene'
+import { createSceneAssetsFromAppearance } from '../scene/assets'
+import { downloadPdf, generatePrintPdf } from '../output/exportPdf'
+import { createDeviceGeometryPage } from '../calibration/deviceGeometryPage'
+import { createTemplateOverlayPage } from '../calibration/templateOverlayPage'
+import { profileMatches } from '../calibration/profileRepository'
+import { applyCalibration } from '../scene/applyCalibration'
+import { waitForDocumentFonts } from '../text/fontRegistry'
 
 const FIELD_TARGETS: Partial<Record<LayoutField, string>> = {
   'paper.widthMm': 'paper-width', 'paper.heightMm': 'paper-height', 'paper.marginTopMm': 'margin-top', 'paper.marginRightMm': 'margin-right',
   'paper.marginBottomMm': 'margin-bottom', 'paper.marginLeftMm': 'margin-left', 'layout.labelWidthMm': 'label-width', 'layout.labelHeightMm': 'label-height',
   'layout.columns': 'label-columns', 'layout.rows': 'label-rows', 'layout.gapXmm': 'gap-x', 'layout.gapYmm': 'gap-y',
-  'layout.offsetXmm': 'offset-x', 'layout.offsetYmm': 'offset-y',
 }
 
 export function LabelPrintingWorkspace() {
   const draft = useLabelPrintingStore((state) => state.draft)
+  const selectedTemplateId = useLabelPrintingStore((state) => state.selectedTemplateId)
   const previewScale = useLabelPrintingStore((state) => state.previewScale)
   const formErrors = useLabelPrintingStore((state) => state.formErrors)
   const setNames = useLabelPrintingStore((state) => state.setNames)
@@ -35,8 +44,11 @@ export function LabelPrintingWorkspace() {
   const setBackgroundImage = useLabelPrintingStore((state) => state.setBackgroundImage)
   const setPreviewScale = useLabelPrintingStore((state) => state.setPreviewScale)
   const setPrintStatus = useLabelPrintingStore((state) => state.setPrintStatus)
+  const activeCalibrationProfile = useLabelPrintingStore((state) => state.activeCalibrationProfile)
   const validation = useMemo(() => validateLayout({ paper: draft.paper, layout: draft.layout }), [draft.layout, draft.paper])
-  const pages = useMemo(() => createPageLayouts(draft.names, draft.paper, draft.layout), [draft.layout, draft.names, draft.paper])
+  const physicalTemplate = useMemo(() => physicalTemplateFromDraft({ paper: draft.paper, layout: draft.layout }, selectedTemplateId), [draft.layout, draft.paper, selectedTemplateId])
+  const pages = useMemo(() => createPageLayouts({ names: draft.names, firstLabelIndex: draft.layout.firstLabelIndex }, physicalTemplate), [draft.layout.firstLabelIndex, draft.names, physicalTemplate])
+  const printScene = useMemo(() => buildPrintScene(pages, draft.appearance), [draft.appearance, pages])
   const effectiveErrors = { ...validation.errors, ...formErrors }
   const canPrintLabels = draft.names.length > 0 && validation.valid && Object.keys(formErrors).length === 0 && pages.length > 0
   const canPrintCalibration = validation.valid && Object.keys(formErrors).length === 0
@@ -67,11 +79,7 @@ export function LabelPrintingWorkspace() {
     if (objectUrl && typeof URL !== 'undefined') URL.revokeObjectURL(objectUrl)
   }, [])
 
-  useEffect(() => {
-    const fields = document.querySelectorAll('[data-label-preview] .label-text > span')
-    const next = Array.from(fields).some((field) => field.clientWidth > 0 && field.scrollWidth > field.clientWidth + 1)
-    setHasLabelOverflow((current) => current === next ? current : next)
-  }, [draft.appearance, pages])
+  useEffect(() => { setHasLabelOverflow(sceneHasTextOverflow(printScene)) }, [printScene])
 
   const validationEntries = Object.entries(effectiveErrors).filter(([, message]) => Boolean(message)) as [LayoutField, string][]
   const handleLabelPrint = () => {
@@ -82,6 +90,64 @@ export function LabelPrintingWorkspace() {
     }
     setShowValidationAlert(false)
     labelPrinter.printDocument()
+  }
+
+  const handlePdfExport = async () => {
+    if (!canPrintLabels) {
+      setPrintStatus('error', draft.names.length === 0 ? '请先导入姓名后再生成 PDF。' : '请先修正排版参数后再生成 PDF。')
+      return
+    }
+    setPrintStatus('building-scene')
+    try {
+      await waitForDocumentFonts()
+      const idealScene = buildPrintScene(pages, draft.appearance)
+      const scene = activeCalibrationProfile && profileMatches(activeCalibrationProfile, { paperSize: draft.paper.size, orientation: draft.paper.orientation, outputPath: 'pdf' })
+        ? applyCalibration(idealScene, activeCalibrationProfile.compensationMatrix)
+        : idealScene
+      setPrintStatus('generating-pdf')
+      const bytes = await generatePrintPdf(scene, { assets: createSceneAssetsFromAppearance(draft.appearance) })
+      downloadPdf(bytes)
+      setPrintStatus('idle')
+    } catch (error) {
+      setPrintStatus('error', error instanceof Error ? error.message : 'PDF 生成失败，请重试或使用浏览器兼容打印。')
+    }
+  }
+
+  const handleCalibrationPdfExport = async () => {
+    if (!canPrintCalibration) {
+      setPrintStatus('error', '请先修正排版参数后再生成设备测试页。')
+      return
+    }
+    setPrintStatus('building-scene')
+    try {
+      const devicePage = createDeviceGeometryPage(draft.paper, 'pdf')
+      setPrintStatus('generating-pdf')
+      const bytes = await generatePrintPdf(devicePage.scene)
+      downloadPdf(bytes, 'aisenedu-device-geometry-v1.pdf')
+      setPrintStatus('idle')
+    } catch (error) {
+      setPrintStatus('error', error instanceof Error ? error.message : '设备测试页 PDF 生成失败，请重试或使用浏览器兼容打印。')
+    }
+  }
+
+  const handleTemplateOverlayPdfExport = async () => {
+    if (!canPrintCalibration) {
+      setPrintStatus('error', '请先修正排版参数后再生成模板覆盖页。')
+      return
+    }
+    setPrintStatus('building-scene')
+    try {
+      const idealScene = createTemplateOverlayPage(physicalTemplate)
+      const scene = activeCalibrationProfile && profileMatches(activeCalibrationProfile, { paperSize: draft.paper.size, orientation: draft.paper.orientation, outputPath: 'pdf' })
+        ? applyCalibration(idealScene, activeCalibrationProfile.compensationMatrix)
+        : idealScene
+      setPrintStatus('generating-pdf')
+      const bytes = await generatePrintPdf(scene)
+      downloadPdf(bytes, 'aisenedu-template-overlay-v1.pdf')
+      setPrintStatus('idle')
+    } catch (error) {
+      setPrintStatus('error', error instanceof Error ? error.message : '模板覆盖页 PDF 生成失败，请重试或使用浏览器兼容打印。')
+    }
   }
 
   const handleClearNames = () => {
@@ -119,14 +185,14 @@ export function LabelPrintingWorkspace() {
           {activeStep === 1 ? <LabelImportPanel onClearRequest={() => setClearOpen(true)} /> : null}
           {activeStep === 2 ? <LabelTemplatePanel /> : null}
           {activeStep === 3 ? <LabelContentPanel /> : null}
-          {activeStep === 4 ? <PrintCalibrationPanel canPrint={canPrintCalibration} canPrintLabels={canPrintLabels} onPrintCalibration={() => calibrationPrinter.printDocument()} onPrintLabels={handleLabelPrint} pageCount={pages.length} /> : null}
+          {activeStep === 4 ? <PrintCalibrationPanel canPrint={canPrintCalibration} canPrintLabels={canPrintLabels} onExportCalibrationPdf={() => { void handleCalibrationPdfExport() }} onExportPdf={() => { void handlePdfExport() }} onExportTemplateOverlayPdf={() => { void handleTemplateOverlayPdfExport() }} onPrintCalibration={() => calibrationPrinter.printDocument()} onPrintLabels={handleLabelPrint} pageCount={pages.length} /> : null}
         </div>
 
         <div className="min-w-0 space-y-4 lg:sticky lg:top-6">
           <PrintPreview appearance={draft.appearance} onScaleChange={setPreviewScale} pages={pages} scale={previewScale} />
           {hasLabelOverflow ? <section aria-labelledby="overflow-warning-title" className="rounded-xl border border-error/30 bg-error/5 p-4 text-sm leading-6 text-error"><h2 className="font-semibold" id="overflow-warning-title">部分字段可能在标签内被截断</h2><p className="mt-1">可减小字号、在“名单与导入”的字段设置中关闭不需要的标题，或调整标签尺寸与网格参数。</p><div className="mt-3 flex flex-wrap gap-2"><Button onClick={() => setActiveStep(3)} size="sm" type="button" variant="secondary">减小字号</Button><Button onClick={() => setActiveStep(1)} size="sm" type="button" variant="secondary">调整字段</Button><Button onClick={() => setActiveStep(2)} size="sm" type="button" variant="secondary">调整标签排版</Button></div></section> : null}
-          <div aria-hidden="true" ref={labelPrintRef}>{canPrintLabels ? <PrintableLabelDocument appearance={draft.appearance} pages={pages} /> : null}</div>
-          <div aria-hidden="true" ref={calibrationPrintRef}>{canPrintCalibration ? <PrintableCalibrationDocument layout={draft.layout} paper={draft.paper} /> : null}</div>
+          <div aria-hidden="true" ref={labelPrintRef}>{canPrintLabels ? <PrintableSvgDocument appearance={draft.appearance} pages={pages} scene={printScene} /> : null}</div>
+          <div aria-hidden="true" ref={calibrationPrintRef}>{canPrintCalibration ? <PrintableCalibrationDocument paper={draft.paper} /> : null}</div>
         </div>
       </div>
 

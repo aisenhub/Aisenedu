@@ -1,4 +1,4 @@
-import { asMm, type LabelAppearance, type LabelLayout, type LabelTemplatePreset, type PaperSettings } from '../types'
+import { asMm, type LabelAppearance, type LabelLayout, type LabelProjectDraft, type LabelTemplatePreset, type PaperSettings } from '../types'
 
 const A4_PORTRAIT: PaperSettings = {
   size: 'A4',
@@ -18,7 +18,7 @@ const makeLayout = (labelWidthMm: number, labelHeightMm: number, columns: number
   rows,
   gapXmm: asMm(gapXmm),
   gapYmm: asMm(gapYmm),
-}) satisfies Omit<LabelLayout, 'firstLabelIndex' | 'offsetXmm' | 'offsetYmm'>
+}) satisfies Omit<LabelLayout, 'firstLabelIndex'>
 
 export const LABEL_TEMPLATE_PRESETS: readonly LabelTemplatePreset[] = [
   {
@@ -93,12 +93,10 @@ export function createDefaultLayout(templateId = DEFAULT_TEMPLATE_ID): LabelLayo
   return {
     ...template.layout,
     firstLabelIndex: 0,
-    offsetXmm: asMm(0),
-    offsetYmm: asMm(0),
   }
 }
 
-export function createDefaultDraft(templateId = DEFAULT_TEMPLATE_ID) {
+export function createDefaultDraft(templateId = DEFAULT_TEMPLATE_ID): LabelProjectDraft {
   const template = getTemplatePreset(templateId)
   return {
     names: [],

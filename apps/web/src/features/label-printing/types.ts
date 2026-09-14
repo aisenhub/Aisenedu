@@ -38,8 +38,6 @@ export type LabelLayout = Readonly<{
   gapXmm: Mm
   gapYmm: Mm
   firstLabelIndex: number
-  offsetXmm: Mm
-  offsetYmm: Mm
 }>
 
 export type TemplateContentCapacity = Readonly<{
@@ -52,7 +50,7 @@ export type LabelTemplatePreset = Readonly<{
   name: string
   version: number
   paper: PaperSettings
-  layout: Omit<LabelLayout, 'firstLabelIndex' | 'offsetXmm' | 'offsetYmm'>
+  layout: Omit<LabelLayout, 'firstLabelIndex'>
   contentCapacity: TemplateContentCapacity
   isPhysicallyVerified: boolean
 }>
@@ -144,8 +142,6 @@ export type LayoutField =
   | 'layout.gapXmm'
   | 'layout.gapYmm'
   | 'layout.firstLabelIndex'
-  | 'layout.offsetXmm'
-  | 'layout.offsetYmm'
 
 export type FieldErrors = Partial<Record<LayoutField, string>>
 

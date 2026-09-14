@@ -202,3 +202,26 @@ Impeccable 的历史评估仅作为参考记录保留，不构成后续开发指
 - 可复用结论：背景编辑需要“拖动 + 缩放 + 键盘/按钮替代”三类操作，裁切交互必须限制在代表性标签预览中；颜色选择可优先使用原生 `input[type=color]` 与项目色板，不必为单一颜色引入选择器依赖。
 - Aisenedu 采用方案：先以原生 Pointer Events、按钮和范围滑块建立轻量会话级编辑模型；仅保存 MIME、临时 object URL、尺寸、缩放、偏移和遮罩等受限状态，预览和打印共享图层模型。
 - 不采用内容及取舍理由：当前不直接引入第三方裁切组件，避免为单张全标签背景增加绝对定位样式和新 CSS 体系；若原生实现无法稳定完成手势、图片解码或打印克隆，再单独评估 MIT 的 `react-easy-crop`，不使用许可证或维护状态不清晰的代码。
+
+## 2026-09-14｜姓名贴打印 v3.1：Scene/SVG/PDF 与诊断式校准
+
+- GitHub 搜索关键词：`gLabels JavaScript label grid source`、`pylabels Avery label layout`、`pdf-lib PrintScaling None fontkit`、`svg2pdf custom fonts`
+- 搜索范围/方向：物理标签模板的 origin/pitch 数据模型、排版与绘制分层、浏览器端向量 PDF、字体嵌入、裁剪和打印缩放提示，以及设备几何校准的分层思路。
+- 参考项目：`gLabels Qt`、`pylabels`、`Hopding/pdf-lib`、`yWorks/svg2pdf.js`。
+- 参考链接：https://github.com/j-evins/glabels-qt；https://github.com/bcbnz/pylabels；https://github.com/Hopding/pdf-lib；https://github.com/yWorks/svg2pdf.js
+- 许可证：gLabels Qt 与 pylabels 为 GPL-3，仅参考公开 schema/README 和分层思想；pdf-lib 与 svg2pdf.js 为 MIT。本次未复制第三方代码，也未把 gLabels/pylabels 作为运行时依赖。
+- 查看内容：gLabels Qt 的 `templates/glabels-4.0.dtd`；pylabels 的 `demos/basic.py`；pdf-lib README、ViewerPreferences/`PrintScaling` 文档和 fontkit 使用方式；svg2pdf.js README 中的 SVG 向量转换和字体说明。
+- 可复用结论：模板应以物理 origin、pitch、label size 和 rows/columns 表达；布局、文本测量、Scene 和 renderer 分层；PDF 应显式关闭 viewer print scaling；设备校准应独立于模板几何，并只对有证据的输出路径应用补偿。
+- Aisenedu 采用方案：落地 `PhysicalTemplate → PageLayout → TextLayout/RenderScene → SVG/PDF` 主链；使用 `pdf-lib@1.17.1 + @pdf-lib/fontkit@1.1.1` 直接 Scene→PDF，使用 SVG 作为预览/浏览器兼容路径；新增独立 Device Geometry Page、测量拟合和 PDF scope Profile；学生名单与原始导入行仍只存当前会话。
+- 不采用内容及取舍理由：不引入 gLabels/pylabels 的 GPL 实现，不引入 svg2pdf.js/jsPDF 备选链路，不做 raster PDF；CJK 字体另经官方 Noto CJK 仓库许可证 Gate 选择，不读取或打包用户系统字体。
+
+## 2026-09-14｜姓名贴打印 v3.1：CJK 字体资产 Gate 收口
+
+- GitHub 搜索关键词：`notofonts noto-cjk NotoSansSC-Regular SubsetOTF license`。
+- 搜索范围/方向：官方 Noto CJK 仓库的简体中文子集目录、`Sans/LICENSE`、发布脚本和仓库 README；核对字体文件、授权、体积与可嵌入方式。
+- 参考链接：[Noto CJK Sans README](https://github.com/notofonts/noto-cjk/blob/main/Sans/README.md)、[Noto CJK Sans LICENSE](https://github.com/notofonts/noto-cjk/blob/main/Sans/LICENSE)、[NotoSansSC-Regular.otf](https://github.com/notofonts/noto-cjk/blob/main/Sans/SubsetOTF/SC/NotoSansSC-Regular.otf)。
+- 许可证：SIL Open Font License 1.1；官方许可明确允许 bundled/embedded redistribution，仓库内同步保存许可证文本。
+- 查看内容：`Sans/SubsetOTF/SC/NotoSansSC-Regular.otf`、`Sans/LICENSE`，并用 `pdf-lib + fontkit` 实际嵌入中文 Scene 后重新读取 PDF。
+- 可复用结论：正式 PDF 需要随应用携带、版本/哈希可追溯的授权字体资产，并在用户点击导出后才请求资产；屏幕字体栈仍可独立保持系统一致性。
+- Aisenedu 采用方案：加入 8,331,336 字节的 Noto Sans SC Regular 子集（SHA-256 记录在 `apps/web/src/features/label-printing/assets/fonts/SOURCE.md`），`FontAssetRegistry` 使用本地 Vite asset URL 按需加载；系统无衬线 ASCII 仍走标准 Helvetica，中文/无合法嵌入映射的 preset 使用明确的授权中文 fallback。
+- 不采用内容及取舍理由：不打包未核实授权的系统字体，不引入在线字体 CDN，不把字体请求放入首页或工具初次进入路径。

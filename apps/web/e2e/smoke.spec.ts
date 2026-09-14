@@ -8,17 +8,39 @@ test('首页可以发现并进入姓名贴工具', async ({ page }) => {
   await expect(page.locator('main h1', { hasText: '标签贴' })).toBeVisible()
 })
 
+test('首页不加载打印重型资源，正式 PDF 在用户点击后按需加载', async ({ page }) => {
+  const requests: string[] = []
+  page.on('request', (request) => requests.push(request.url()))
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: '工具' })).toBeVisible()
+  const heavyResource = /renderSceneToPdf|pdf-lib|fontkit|NotoSansSC-Regular/i
+  expect(requests.some((url) => heavyResource.test(url))).toBe(false)
+
+  await page.getByRole('link', { name: /学生姓名贴/ }).click()
+  await expect(page).toHaveURL(/\/tools\/name-labels$/)
+  await page.getByLabel('粘贴或输入名单').fill('林小满')
+  await page.getByRole('button', { name: '使用这份名单' }).click()
+  await page.getByRole('button', { name: /^打印校准：/ }).click()
+  expect(requests.some((url) => heavyResource.test(url))).toBe(false)
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: '生成打印 PDF' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe('aisenedu-name-labels.pdf')
+  expect(requests.some((url) => /NotoSansSC-Regular/i.test(url))).toBe(true)
+})
+
 test('姓名贴工作台支持文本名单和 CSV 列选择', async ({ page }) => {
   await page.goto('/tools/name-labels')
   await page.getByLabel('粘贴或输入名单').fill('林小满\n周知行\n陈安然')
   await page.getByRole('button', { name: '使用这份名单' }).click()
   await page.getByRole('button', { name: /^打印校准：/ }).click()
-  await expect(page.getByRole('button', { name: '打印姓名贴' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: '生成打印 PDF' })).toBeEnabled()
   await page.getByRole('button', { name: '单格', exact: true }).click()
   await expect(page.getByRole('button', { name: '单格', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByText('标签尺寸')).toBeVisible()
   await page.getByRole('button', { name: '整页', exact: true }).click()
-  await page.locator('[data-label-cell-id]').first().click()
+  await page.locator('button[aria-label^="查看第"]').first().click()
   await expect(page.getByRole('button', { name: '单格', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByText('标签尺寸')).toBeVisible()
   await page.getByRole('button', { name: '整页', exact: true }).click()
@@ -90,8 +112,8 @@ test('背景图编辑在移动端提供按钮替代并同步到打印文档', as
   await expect(page.getByText('拖动调整位置')).toBeVisible()
   await page.getByRole('button', { name: '放大背景图片' }).click()
   await page.getByRole('button', { name: '重置背景图片位置' }).click()
-  await expect(page.getByTestId('printable-label-document').locator('img')).toHaveCount(2)
-  expect(await page.getByTestId('printable-label-document').locator('img').first().getAttribute('src')).toBe(await page.locator('.label-page img').first().getAttribute('src'))
+  await expect(page.getByTestId('printable-label-document').locator('image')).toHaveCount(2)
+  expect(await page.getByTestId('printable-label-document').locator('image').first().getAttribute('href')).toBe(await page.locator('.label-page image').first().getAttribute('href'))
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375)
 })
 
@@ -102,5 +124,5 @@ test('1000 条名单可以分页并保持打印前页面可用', async ({ page }
   await page.getByRole('button', { name: /^打印校准：/ }).click()
   await expect(page.getByLabel('当前工作台状态').getByText('1000 人')).toBeVisible()
   await expect(page.getByText('第 1 / 20 页 · 页面按 mm 排版')).toBeVisible()
-  await expect(page.getByRole('button', { name: '打印姓名贴' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: '生成打印 PDF' })).toBeEnabled()
 })

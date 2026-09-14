@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useLabelPrintingDraft } from '../hooks/useLabelPrintingDraft'
 import { asMm, type PaperCutStyle } from '../types'
 import { useLabelPrintingStore } from '../stores/useLabelPrintingStore'
-import { createTemplateConfig, parseTemplateConfig, type LabelTemplateConfig } from '../utils/templateConfig'
+import { configToDraftFields, createTemplateConfig, parseTemplateConfig, type LabelTemplateConfig } from '../utils/templateConfig'
 import { FieldLabel, NumberField } from './FieldMessage'
 import { LabelGridDiagram } from './LabelGridDiagram'
 
@@ -65,13 +65,26 @@ export function LabelTemplatePanel() {
   }
 
   const applyConfig = (config: LabelTemplateConfig) => {
-    updatePaperConfig(config.paper)
-    updateLayoutConfig({ ...config.layout, firstLabelIndex: 0 })
+    const fields = configToDraftFields(config)
+    updatePaperConfig(fields.paper)
+    updateLayoutConfig(fields.layout)
     setBackgroundImage(undefined)
-    updateAppearanceConfig(config.appearance)
+    updateAppearanceConfig(fields.appearance)
     setConfigName(config.name)
     resetFormFromDraft()
     setConfigMessage(`已应用本地模板“${config.name}”，当前名单保持不变。`)
+  }
+
+  const pitchValue = (sizeField: 'layout.labelWidthMm' | 'layout.labelHeightMm', gapField: 'layout.gapXmm' | 'layout.gapYmm') => {
+    const size = Number(fieldState.value(sizeField))
+    const gap = Number(fieldState.value(gapField))
+    return Number.isFinite(size) && Number.isFinite(gap) ? String(Math.round((size + gap) * 100) / 100) : fieldState.value(gapField)
+  }
+
+  const setPitch = (sizeField: 'layout.labelWidthMm' | 'layout.labelHeightMm', gapField: 'layout.gapXmm' | 'layout.gapYmm', rawValue: string) => {
+    const size = Number(fieldState.value(sizeField))
+    const pitch = Number(rawValue)
+    setNumberField(gapField, rawValue.trim() === '' || !Number.isFinite(size) || !Number.isFinite(pitch) ? rawValue : String(pitch - size))
   }
 
   const importConfig = async (file?: File) => {
@@ -110,10 +123,10 @@ export function LabelTemplatePanel() {
         <LabelGridDiagram layout={draft.layout} paper={paper} />
 
         <div className="mt-5">
-          <h4 className="text-xs font-semibold text-text">起始位置 <span className="ml-1 font-normal text-text-muted">A、B</span></h4>
+          <h4 className="text-xs font-semibold text-text">标签起始位置 <span className="ml-1 font-normal text-text-muted">originX / originY</span></h4>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            <NumberField error={fieldState.error('paper.marginTopMm')} help="纸张顶部到第一行标签的距离。" id="margin-top" label="A · 上边距" min={0} onChange={(value) => setNumberField('paper.marginTopMm', value)} unit="mm" value={fieldState.value('paper.marginTopMm')} />
-            <NumberField error={fieldState.error('paper.marginLeftMm')} help="纸张左侧到第一列标签的距离。" id="margin-left" label="B · 左边距" min={0} onChange={(value) => setNumberField('paper.marginLeftMm', value)} unit="mm" value={fieldState.value('paper.marginLeftMm')} />
+            <NumberField error={fieldState.error('paper.marginLeftMm')} help="纸张左侧到第一列标签左边缘的物理距离，即 originX。" id="margin-left" label="X · 起始位置" min={0} onChange={(value) => setNumberField('paper.marginLeftMm', value)} unit="mm" value={fieldState.value('paper.marginLeftMm')} />
+            <NumberField error={fieldState.error('paper.marginTopMm')} help="纸张顶部到第一行标签上边缘的物理距离，即 originY。" id="margin-top" label="Y · 起始位置" min={0} onChange={(value) => setNumberField('paper.marginTopMm', value)} unit="mm" value={fieldState.value('paper.marginTopMm')} />
           </div>
         </div>
 
@@ -126,10 +139,10 @@ export function LabelTemplatePanel() {
         </div>
 
         <div className="mt-5">
-          <h4 className="text-xs font-semibold text-text">卡片间距 <span className="ml-1 font-normal text-text-muted">E、F</span></h4>
+          <h4 className="text-xs font-semibold text-text">标签节距 <span className="ml-1 font-normal text-text-muted">pitchX / pitchY</span></h4>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            <NumberField error={fieldState.error('layout.gapXmm')} help="相邻标签之间的横向空白。" id="gap-x" label="E · 横向间距" min={0} onChange={(value) => setNumberField('layout.gapXmm', value)} unit="mm" value={fieldState.value('layout.gapXmm')} />
-            <NumberField error={fieldState.error('layout.gapYmm')} help="相邻标签之间的纵向空白。" id="gap-y" label="F · 纵向间距" min={0} onChange={(value) => setNumberField('layout.gapYmm', value)} unit="mm" value={fieldState.value('layout.gapYmm')} />
+            <NumberField error={fieldState.error('layout.gapXmm')} help="相邻标签同一基准点之间的横向距离，即标签宽度加横向空白。" id="gap-x" label="X · 横向节距" min={0} onChange={(value) => setPitch('layout.labelWidthMm', 'layout.gapXmm', value)} unit="mm" value={pitchValue('layout.labelWidthMm', 'layout.gapXmm')} />
+            <NumberField error={fieldState.error('layout.gapYmm')} help="相邻标签同一基准点之间的纵向距离，即标签高度加纵向空白。" id="gap-y" label="Y · 纵向节距" min={0} onChange={(value) => setPitch('layout.labelHeightMm', 'layout.gapYmm', value)} unit="mm" value={pitchValue('layout.labelHeightMm', 'layout.gapYmm')} />
           </div>
         </div>
 
@@ -141,7 +154,7 @@ export function LabelTemplatePanel() {
           </div>
         </div>
 
-        <p className="mt-3 text-xs leading-5 text-text-muted">右边距和下边距会根据纸张尺寸、标签大小及间距自动计算。</p>
+        <p className="mt-3 text-xs leading-5 text-text-muted">节距是标签尺寸与标签间空白的总和；右边距和下边距会根据纸张与最后一格位置自动计算。</p>
       </div>
 
       <div className="hidden mt-6 border-t border-border pt-5"><h3 className="text-sm font-semibold text-text">本地模板配置</h3><p className="mt-1 text-xs leading-5 text-text-muted">仅保存纸张、布局、样式和校准参数；名单、班级、文件名与背景图片不会保存。</p><div className="mt-3 flex flex-wrap items-center gap-2"><input aria-label="本地模板名称" className="min-h-10 min-w-52 flex-1 rounded-lg border border-border bg-surface-raised px-3 text-sm text-text outline-none focus:border-focus focus:ring-4 focus:ring-focus/15" maxLength={60} onChange={(event) => setConfigName(event.target.value)} value={configName} /><Button onClick={saveLocalConfig} size="sm" type="button" variant="secondary"><Save aria-hidden="true" className="size-4" />保存到本机</Button><Button onClick={exportConfig} size="sm" type="button" variant="secondary"><Download aria-hidden="true" className="size-4" />导出</Button><Button onClick={() => configInputRef.current?.click()} size="sm" type="button" variant="secondary"><Upload aria-hidden="true" className="size-4" />导入</Button><Button aria-label="删除本地模板配置" onClick={() => { localStorage.removeItem('aisenedu.label-templates.v1'); setSavedConfigs([]); setConfigMessage('本机模板配置已删除。') }} size="icon" type="button" variant="ghost"><Trash2 aria-hidden="true" className="size-4" /></Button><input accept="application/json,.json" className="sr-only" onChange={(event) => { void importConfig(event.target.files?.[0]); event.target.value = '' }} ref={configInputRef} type="file" /></div>{savedConfigs.length > 0 ? <div className="mt-3 flex flex-wrap gap-2" aria-label="已保存的本地模板">{savedConfigs.map((config) => <Button key={config.name} onClick={() => applyConfig(config)} size="sm" type="button" variant="ghost">应用“{config.name}”</Button>)}</div> : null}{configMessage ? <p className="mt-2 text-xs leading-5 text-text-muted" role="status">{configMessage}</p> : null}</div>

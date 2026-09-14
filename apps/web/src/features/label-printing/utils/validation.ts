@@ -1,10 +1,9 @@
-import { asMm, type FieldErrors, type LabelLayout, type LayoutValidationResult, type PaperSettings } from '../types'
+import type { FieldErrors, LabelLayout, LayoutValidationResult, PaperSettings } from '../types'
 
 type LayoutCandidate = Readonly<{ paper: PaperSettings; layout: LabelLayout }>
 
 const MAX_COLUMNS = 20
 const MAX_ROWS = 50
-const MAX_OFFSET_MM = 10
 
 function addError(errors: FieldErrors, field: keyof FieldErrors, message: string) {
   if (!errors[field]) errors[field] = message
@@ -40,8 +39,6 @@ export function validateLayout(candidate: LayoutCandidate): LayoutValidationResu
     ['gapXmm', layout.gapXmm],
     ['gapYmm', layout.gapYmm],
     ['firstLabelIndex', layout.firstLabelIndex],
-    ['offsetXmm', layout.offsetXmm],
-    ['offsetYmm', layout.offsetYmm],
   ]
   for (const [field, value] of layoutNumbers) {
     if (!isFiniteNumber(value)) addError(errors, `layout.${field}` as keyof FieldErrors, '请输入有效数字')
@@ -53,9 +50,6 @@ export function validateLayout(candidate: LayoutCandidate): LayoutValidationResu
   if (!Number.isInteger(layout.rows) || layout.rows < 1 || layout.rows > MAX_ROWS) addError(errors, 'layout.rows', `行数必须是 1–${MAX_ROWS} 的整数`)
   if (layout.gapXmm < 0) addError(errors, 'layout.gapXmm', '横向间距不能为负数')
   if (layout.gapYmm < 0) addError(errors, 'layout.gapYmm', '纵向间距不能为负数')
-  if (layout.offsetXmm < -MAX_OFFSET_MM || layout.offsetXmm > MAX_OFFSET_MM) addError(errors, 'layout.offsetXmm', 'X 偏移范围为 -10 至 10mm')
-  if (layout.offsetYmm < -MAX_OFFSET_MM || layout.offsetYmm > MAX_OFFSET_MM) addError(errors, 'layout.offsetYmm', 'Y 偏移范围为 -10 至 10mm')
-
   const capacity = layout.columns * layout.rows
   if (!Number.isInteger(layout.firstLabelIndex) || layout.firstLabelIndex < 0 || layout.firstLabelIndex >= capacity) addError(errors, 'layout.firstLabelIndex', '起始格必须在当前纸张格数范围内')
 
@@ -67,8 +61,4 @@ export function validateLayout(candidate: LayoutCandidate): LayoutValidationResu
   if (gridHeight > availableHeight) addError(errors, 'layout.labelHeightMm', `纵向网格需要 ${gridHeight.toFixed(1)}mm，可用高度只有 ${availableHeight.toFixed(1)}mm`)
 
   return { valid: Object.keys(errors).length === 0, errors }
-}
-
-export function clampOffset(value: number) {
-  return asMm(Math.min(MAX_OFFSET_MM, Math.max(-MAX_OFFSET_MM, value)))
 }
