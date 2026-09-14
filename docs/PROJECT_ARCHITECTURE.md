@@ -203,4 +203,4 @@ UI 遵循 `components/ui/` 中的 shadcn/ui 按需组件和语义 token；姓名
 ### 当前验证边界
 
 - 已验证（2026-09-14）：`corepack pnpm --filter @aisenedu/web build`、`lint`、`test`、`test:e2e`；Playwright Chromium 页面加载、导入、响应式和 1000 条名单流程；打印样式/Scene/PDF/校准/隐私单元测试。
-- 尚未由本轮自动化环境完成：`test:coverage`、Edge 专项运行、agent-browser Network 面板、系统打印对话框内的真实纸张驱动选项、实体打印机进纸与毫米偏差；因此通用模板均标记为“未实物验证”，交付说明不宣称厂商纸型精度。
+- 本轮自动化环境已完成：`test:coverage`（V8 总体 statements `65.92%`、branches `74.29%`、functions `60.64%`、lines `65.92%`）。仍未完成 Edge 专项运行、agent-browser Network 面板、系统打印对话框内的真实纸张驱动选项、实体打印机进纸与毫米偏差；因此通用模板均标记为“未实物验证”，交付说明不宣称厂商纸型精度。

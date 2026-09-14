@@ -208,18 +208,18 @@
   git diff --check
   ```
 - 退出码：`0`
-- 结果摘要：Vitest `19 passed / 62 passed`；build `1975 modules transformed`，NameLabelPrinting 页面 `225.77 kB`（gzip `69.28 kB`），PDF renderer `4.11 kB`（gzip `2.10 kB`），fontkit `716.82 kB`（gzip `329.77 kB`），Noto asset 独立输出；lint 与 diff check 通过。旧 LabelPageCanvas/PrintableLabelDocument、旧 CSS、offset 入口已无引用；Profile repository 与匹配/停用测试通过。
+- 结果摘要：Vitest `19 passed / 62 passed`；build `1975 modules transformed`，NameLabelPrinting 页面 `225.81 kB`（gzip `69.30 kB`），PDF renderer `4.11 kB`（gzip `2.10 kB`），fontkit `716.82 kB`（gzip `329.77 kB`），Noto asset 独立输出；lint、coverage 与 diff check 通过。旧 LabelPageCanvas/PrintableLabelDocument、旧 CSS、offset 入口已无引用；Profile repository 与匹配/停用测试通过。
 - 失败详情：`agent-browser` CLI 不可用且 CUA fallback 无可用浏览器；该工具 Network 面板未验证。Playwright 同等网络断言通过。
 - 覆盖范围：`unit / component / e2e / build / lint / privacy / performance / compatibility`
-- 此结果在后续相关代码变化后是否仍有效：待最终完整 E2E 复测确认。
+- 此结果在后续相关代码变化后是否仍有效：是；布局实现路径整理及字体文案调整后已重新通过完整 Vitest、coverage、build、lint 和 Playwright E2E。
 
 #### 2026-09-14 — Phase 5 — 实体打印机清单核对
 
 - 被验证代码：非代码只读环境核对
 - 环境：Windows PowerShell；系统打印机枚举
-- 命令/操作：`Get-Printer | Select-Object Name,DriverName,PortName,PrinterStatus`
+- 命令/操作：`Get-Printer | Select-Object Name,PrinterStatus,WorkOffline,Type,PortName`
 - 退出码：`0`
-- 结果摘要：当前可见一台实体打印机 `Brother DCP-T426W Printer`，另有 Microsoft Print to PDF、XPS、Fax、OneNote 软件打印机；未发现第二台普通实体打印机。
+- 结果摘要：当前可见一台实体打印机 `Brother DCP-T426W Printer`（`Offline`），另有 Microsoft Print to PDF、XPS、Fax、OneNote 软件打印机；未发现第二台普通实体打印机。
 - 失败详情：没有用户授权执行消耗纸张/墨水的实体打印；没有纸材 SKU、驱动版本、进纸方式和尺量结果，因此不填充 synthetic/physical sample。
 - 结论：软件校准流程可继续使用；两台打印机、同配置三次重复、普通纸/目标介质和 Template Overlay 物理门槛保持未验证。
 - 覆盖范围：`physical`
