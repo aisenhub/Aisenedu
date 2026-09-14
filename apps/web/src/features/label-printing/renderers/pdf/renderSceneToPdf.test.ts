@@ -9,6 +9,8 @@ import { buildPrintScene } from '../../scene/buildPrintScene'
 import { applyCalibration } from '../../scene/applyCalibration'
 import { asMm } from '../../types'
 import { DEFAULT_FONT_REGISTRY } from '../../text/fontRegistry'
+import { SceneAssetRepository } from '../../scene/assets'
+import type { PrintScene } from '../../scene/types'
 import { renderSceneToPdf } from './renderSceneToPdf'
 
 describe('renderSceneToPdf', () => {
@@ -35,7 +37,7 @@ describe('renderSceneToPdf', () => {
     expect(bytes.byteLength).toBeGreaterThan(500)
   })
 
-  it('使用本地授权字体资产生成包含中文的 PDF', async () => {
+  it('使用本地授权字体资产生成包含中文的 PDF', { timeout: 30_000 }, async () => {
     const template = physicalTemplateFromPreset(getTemplatePreset('a4-4x10-1-line'))
     const pages = createPageLayouts({ firstLabelIndex: 0, names: [{ id: 'cjk', value: '林小满', sourceRow: 1, duplicateCount: 1 }] }, template)
     const scene = buildPrintScene(pages, { ...DEFAULT_APPEARANCE, fontPreset: 'systemSans', showNameTitle: false })
@@ -44,6 +46,37 @@ describe('renderSceneToPdf', () => {
     const document = await PDFDocument.load(bytes)
 
     expect(document.getPageCount()).toBe(1)
-    expect(bytes.byteLength).toBeGreaterThan(5000)
+    // Keep the CJK compatibility guard: pdf-lib/fontkit subsetting can create
+    // PDFs that parse correctly but render missing glyphs in mobile viewers.
+    expect(bytes.byteLength).toBeGreaterThan(1_000_000)
+  })
+
+  it('跨页复用同一个背景图片资源，只解码并嵌入一次', async () => {
+    const pngBytes = new Uint8Array(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'))
+    const assets = new SceneAssetRepository()
+    let loadCount = 0
+    assets.register({
+      assetId: 'background:fixture',
+      url: 'blob:fixture',
+      mimeType: 'image/png',
+      loadBytes: async () => {
+        loadCount += 1
+        return pngBytes
+      },
+    })
+    const scene: PrintScene = {
+      pages: Array.from({ length: 3 }, (_, pageIndex) => ({
+        pageIndex,
+        widthMm: asMm(210),
+        heightMm: asMm(297),
+        nodes: [{ kind: 'image', assetId: 'background:fixture', xMm: asMm(10), yMm: asMm(10), widthMm: asMm(40), heightMm: asMm(40) }],
+      })),
+    }
+
+    const bytes = await renderSceneToPdf(scene, { assets })
+    const document = await PDFDocument.load(bytes)
+
+    expect(loadCount).toBe(1)
+    expect(document.getPageCount()).toBe(3)
   })
 })

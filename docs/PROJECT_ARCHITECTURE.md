@@ -186,7 +186,7 @@ corepack pnpm lint
 
 ## 13. 首个工具的加载、依赖与隐私记录
 
-当前首个工具为 `/tools/name-labels` 学生姓名贴，页面通过路由级 `React.lazy` 加载。首页只加载应用壳、导航和轻量工具入口；姓名贴页面进入后才加载其 feature chunk。用户选择 XLSX 文件后才动态加载 `read-excel-file@9.3.10` 的兼容入口和浏览器入口，前者失败后再尝试后者；生产构建中的 XLSX 解析依赖不进入首页首屏 chunk。打印主路径为 `PhysicalTemplate → PageLayout[] → PrintScene → SVG/PDF`，PDF 使用 `pdf-lib@1.17.1` 与 `@pdf-lib/fontkit@1.1.1`，浏览器打印通过同一 SVG 场景保留兼容路径；Noto Sans SC Regular 的 8.3MB 子集仅在中文 PDF 导出时由 FontAssetRegistry 按需加载。
+当前首个工具为 `/tools/name-labels` 学生姓名贴，页面通过路由级 `React.lazy` 加载。首页只加载应用壳、导航和轻量工具入口；姓名贴页面进入后才加载其 feature chunk。用户选择 XLSX 文件后才动态加载 `read-excel-file@9.3.10` 的兼容入口和浏览器入口，前者失败后再尝试后者；生产构建中的 XLSX 解析依赖不进入首页首屏 chunk。打印主路径为 `PhysicalTemplate → PageLayout[] → PrintScene → SVG/PDF`，PDF 使用 `pdf-lib@1.17.1` 与 `@pdf-lib/fontkit@1.1.1`，浏览器打印通过同一 SVG 场景保留兼容路径；Noto Sans SC Regular 的 8.3MB 应用内字体资产仅在中文 PDF 导出时由 FontAssetRegistry 按需加载，CJK PDF 使用完整字体以兼容移动阅读器。
 
 姓名、原始文件名和表格内容只在当前页面内存中处理；纸张、排版和外观等安全设置通过白名单持久化，名单、导入行、背景 object URL 和原始测量不会持久化。当前实现没有网络上传、分析事件、日志输出或 URL 编码。导入服务在读取前检查 5MB 文件上限，并限制 10,000 行、100 列和 80 个 Unicode 字符的姓名长度。XLSX 解析失败、格式不支持、超限和列选择取消均保留原有草稿。
 
@@ -196,7 +196,7 @@ UI 遵循 `components/ui/` 中的 shadcn/ui 按需组件和语义 token；姓名
 
 姓名贴工具使用“导入名单 → 标签排版 → 内容样式 → 打印校准”四步导航，桌面端步骤之间使用轻量右箭头表达前进方向。步骤只控制当前界面，不复制或重置草稿；用户可以随时回跳，名单、表单原始值、排版参数、样式和预览页码保持不变。步骤导航在桌面端跨配置与预览两栏显示，使用足够宽度的紧凑横向布局；平板和手机端使用不横向滚动的 2×2 网格。桌面端配置栏不创建独立纵向滚动，纸张横向查看只发生在带提示的预览容器内。
 
-`LabelAppearance` 将字体预设、HEX 色值、纯色/图片背景、纯色外框、遮罩和字段标题作为明确字段。字体预览使用本机字体栈；PDF 标准字体覆盖 ASCII，中文通过随应用分发且附带 OFL 1.1 文本的 Noto Sans SC Regular 子集嵌入，楷体/衬线/等宽在中文场景使用明确的授权中文 PDF fallback，不静默读取用户系统字体。背景图片只接受 PNG/JPEG/WebP，限制大小和像素，保存在当前会话的 object URL 中，替换、恢复默认和重置时释放旧资源。预览、PDF 和打印都使用同一个 `PrintScene`，打印 SVG 不包含背景编辑辅助提示。
+`LabelAppearance` 将字体预设、HEX 色值、纯色/图片背景、纯色外框、遮罩和字段标题作为明确字段。字体预览使用本机字体栈；PDF 标准字体覆盖 ASCII，中文通过随应用分发且附带 OFL 1.1 文本的 Noto Sans SC Regular 完整字体嵌入，避免 CJK 子集在移动阅读器中的缺字，楷体/衬线/等宽在中文场景使用明确的授权中文 PDF fallback，不静默读取用户系统字体。背景图片只接受 PNG/JPEG/WebP，限制大小和像素，保存在当前会话的 object URL 中，替换、恢复默认和重置时释放旧资源。预览、PDF 和打印都使用同一个 `PrintScene`，打印 SVG 不包含背景编辑辅助提示。
 
 模板配置导出、本地保存和导入使用版本化白名单，只允许纸张、布局和样式设置，拒绝姓名、班级、文件名、object URL、背景图、原始导入行和原始测量字段。性能基线见 [`NAME_LABEL_PERFORMANCE.md`](NAME_LABEL_PERFORMANCE.md)；2026-09-14 同一 Vitest 环境复测 10,000 条合成名单清洗和分页约 61ms，暂不增加 Worker。场景构建复用单一文字测量器，避免每枚标签重复创建测量上下文。
 

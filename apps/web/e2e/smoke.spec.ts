@@ -20,6 +20,9 @@ test('首页不加载打印重型资源，正式 PDF 在用户点击后按需加
   await expect(page).toHaveURL(/\/tools\/name-labels$/)
   await page.getByLabel('粘贴或输入名单').fill('林小满')
   await page.getByRole('button', { name: '使用这份名单' }).click()
+  const previewText = page.locator('.label-page svg text').first()
+  await expect(previewText).toContainText('林小满')
+  expect(Number(await previewText.getAttribute('font-size'))).toBeCloseTo(14 * 25.4 / 72, 3)
   await page.getByRole('button', { name: /^打印校准：/ }).click()
   expect(requests.some((url) => heavyResource.test(url))).toBe(false)
 

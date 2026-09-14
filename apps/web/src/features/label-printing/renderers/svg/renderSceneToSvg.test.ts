@@ -14,6 +14,7 @@ describe('renderSceneToSvg', () => {
     expect(svg).toContain('height="297mm"')
     expect(svg).toContain('viewBox="0 0 210 297"')
     expect(svg).toContain('&lt;林&amp;小满&gt;')
+    expect(svg).toContain('font-size="4.9389"')
     expect(svg).toContain('clip-path="url(#scene-page-clip-0)"')
     expect(svg).toContain('clip-path="url(#scene-node-clip-0-0)"')
   })

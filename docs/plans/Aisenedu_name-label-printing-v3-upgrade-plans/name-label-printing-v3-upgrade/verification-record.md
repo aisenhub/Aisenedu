@@ -5,7 +5,7 @@
 ## 1. 项目与基线
 
 - 本次目标：实现 `docs/plans/Aisenedu_name-label-printing-v3-upgrade-plans/name-label-printing-v3-upgrade/00-master-plan.md` 定义的 Phase 0–6。
-- 本次范围：软件主链、中文 PDF 字体资产、校准 Profile UI、旧 renderer/offset 清理和自动化验证已完成；真实打印机重复性与物理验收仍未完成。
+- 本次范围：软件主链、中文 PDF 字体资产、移动端预览/输入回归、校准 Profile UI、旧 renderer/offset 清理和自动化验证已完成；真实打印机重复性与物理验收仍未完成。
 - GitHub 仓库：`aisenhub/Aisenedu`（执行时核对 remote）。
 - 本地仓库绝对路径：`E:\Projects\Aisenedu`。
 - 实施分支：`codex/name-label-printing-v2-upgrade`；已合并分支：`main`。
@@ -42,7 +42,7 @@
 - 实际修改文件：`stores/labelPrintSettingsStorage.ts`、`stores/useLabelPrintingStore.ts`、`reference/REFERENCE_PROJECT_INDEX.md`、本计划记录。
 - 已实现行为：只持久化纸张、布局、外观和模板选择；旧 v1 数据迁移时主动丢弃姓名、原始导入行、背景 object URL、起始格和 offset；补充 pdf-lib/fontkit 与 CJK 资产 Gate 结论。
 - 冻结/变更契约：长期设置 key 改为 `aisenedu.label-settings.v2`；姓名与导入行保留当前会话内存；校准 Profile 单独存储且不含学生数据。
-- 与计划偏差：初始 Gate 记录曾为 CJK No-Go；后续已完成字体决策，采用官方 Noto Sans SC Regular 子集并保留许可证与哈希记录。
+- 与计划偏差：初始 Gate 记录曾为 CJK No-Go；后续已完成字体决策，采用官方 Noto Sans SC Regular 完整字体并保留许可证与哈希记录。为规避 pdf-lib/fontkit 的 CJK subset 在移动阅读器中解析成功但缺字的兼容性问题，中文 PDF 明确使用 `subset: false`；ASCII 仍使用标准字体。
 - 新增依赖：`pdf-lib@1.17.1`、`@pdf-lib/fontkit@1.1.1`。
 - 未完成/未验证：真实物理 PDF 打印。
 - 关键失败/阻塞：无代码失败；CJK 资产与物理打印属于外部验收前置。
@@ -84,8 +84,8 @@
 - PDF 技术路线/库/版本：已验证并采用 `pdf-lib@1.17.1 + @pdf-lib/fontkit@1.1.1` 直接 Scene→PDF；PDF 页 MediaBox 精确由 mm 转换，ViewerPreferences 设置 `PrintScaling.None`。
 - 字体资产与许可证：`NotoSansSC-Regular.otf` 随应用分发，8,331,336 bytes，SHA-256 见 `apps/web/src/features/label-printing/assets/fonts/SOURCE.md`，附官方 OFL 1.1 文本；实际嵌入中文 Scene 后 PDF 可重新读取。
 - 实际修改文件：`renderers/pdf/renderSceneToPdf.ts`、`output/exportPdf.ts`、PDF 结构测试、`apps/web/package.json`、`pnpm-lock.yaml`。
-- Benchmark：已完成 ASCII 与 CJK Scene 的 1/20/100/200 页耗时/文件大小 benchmark；未测峰值内存和图片场景。
-- 未完成：物理打印和包含真实图片解码的全量 PDF benchmark。
+- Benchmark：已完成 ASCII、CJK 和图片 Scene 的 1/20/100/200 页耗时/文件大小 benchmark；未测峰值内存。
+- 未完成：物理打印。
 - Handoff：正式 PDF 的 CJK 软件 Gate 已通过；物理验收仍保持未验证。
 
 ### Phase 5
@@ -191,9 +191,48 @@
 - 退出码：`0`
 - 结果摘要：本地 `NotoSansSC-Regular.otf` 8,331,336 bytes，SHA-256 `FAA6C9DF652116DDE789D351359F3D7E5D2285A2B2A1F04A2D7244DF706D5EA9`；OFL 1.1 许可证文本随 asset 保存；Vitest 中文 Scene→PDF `3 passed`，Playwright 确认首页/进入工具未请求 PDF、fontkit 或 Noto 字体，点击正式 PDF 后成功下载 `aisenedu-name-labels.pdf` 并请求 Noto 字体。
 - 失败详情：无代码失败。
-- 修复措施：ASCII systemSans 使用标准 Helvetica；中文和其他无合法 PDF 映射的字体使用明确的 Noto Sans SC 授权 fallback；字体仅在导出动作中加载。
+- 修复措施：ASCII systemSans 使用标准 Helvetica；中文和其他无合法 PDF 映射的字体使用明确的 Noto Sans SC 授权 fallback；中文嵌入使用完整字体以保证移动阅读器兼容性，字体仍仅在导出动作中加载。
 - 覆盖范围：`unit / e2e / build / compatibility`
 - 此结果在后续相关代码变化后是否仍有效：字体和 renderer 后续只做结构清理，完整测试/构建需以最新记录为准。
+
+#### 2026-09-14 — 移动端回归 — 字号单位、输入显示与中文 PDF 兼容性
+
+- 被验证代码：`renderSceneToSvg.ts`、`renderSceneToPdf.ts`、`PrintPreview.tsx`、SVG/PDF 回归测试、`smoke.spec.ts`
+- 环境：Windows PowerShell；Node `v24.19.0`；Playwright Chromium；Vite dev server；视口 `375 × 812`
+- 复现：输入 `其他文字` 后检查首个 SVG 文本节点，并执行正式 PDF 下载；同时检查页面横向滚动、浏览器错误和 Noto 字体请求。
+- 根因：Scene/SVG 的 `viewBox` 单位是 `mm`，但 renderer 直接输出了以 `pt` 为单位的 `14pt` 字号；在 SVG 中它被按 CSS 像素解释，导致文字测量约 `130.65mm`，即使调到最小字号也会明显超出 `40mm` 标签。输入内容本身实际已存在，之前主要被过大文本裁剪，另外详情预览的选择标识不应依赖当前页的 cell id。
+- 修复：SVG 边界将 `fontSizePt` 统一换算为 `mm` 用户单位；详情预览使用稳定的独立选中标识；E2E 增加输入文本和字号回归断言。CJK PDF 改为 `subset: false`，避免 pdf-lib/fontkit 子集 PDF 在部分移动阅读器中结构可读但字形缺失；ASCII 仍使用标准字体。
+- 结果：修复后文本为 `姓名：其他文字`，字号属性为 `4.9389`，`getBBox()` 宽 `35.321mm`，小于标签宽 `40mm`；生成 PDF 为 `7,339,833 bytes`、1 页，可被 `PDFDocument.load()` 重新读取，确实请求 Noto 字体且无页面错误/横向溢出。
+- 资源复用：跨 3 页共享同一 PNG 背景的 PDF 测试中，资源 `loadBytes` 调用次数为 `1`，确认图片只解码/嵌入一次。
+- 命令/操作：
+  ```bash
+  corepack pnpm --filter @aisenedu/web exec vitest run src/features/label-printing/renderers/svg/renderSceneToSvg.test.ts src/features/label-printing/renderers/pdf/renderSceneToPdf.test.ts
+  ```
+- 退出码：`0`
+- 结果摘要：针对性 Vitest `2 files / 5 tests passed`；浏览器回归确认姓名输入可见、字号与标签尺寸匹配、移动端无横向溢出，中文 PDF 可读取。
+- 覆盖范围：`unit / e2e / responsive / compatibility / performance`
+- 此结果在后续相关代码变化后是否仍有效：需以本记录后续的最终全量验证和 GitHub merge commit 为准。
+
+#### 2026-09-14 — Bugfix final verification — 移动端预览与中文 PDF
+
+- 被验证代码：上述缺陷修复后的 working tree，交付前最终状态
+- 命令/操作：
+  ```bash
+  corepack pnpm --filter @aisenedu/web test
+  corepack pnpm --filter @aisenedu/web test:coverage
+  corepack pnpm --filter @aisenedu/web build
+  corepack pnpm --filter @aisenedu/web lint
+  corepack pnpm --filter @aisenedu/web test:e2e
+  git diff --check
+  node C:\Users\S1786\.codex\skills\impeccable\scripts\detect.mjs --json apps/web/src/features/label-printing/components/PrintPreview.tsx apps/web/src/features/label-printing/renderers/svg/renderSceneToSvg.ts
+  ```
+- 退出码：全部为 `0`
+- 结果摘要：Vitest `19 passed / 63 passed`；V8 statements/lines `66.28%`、branches `74.33%`、functions `61.72%`；生产构建 `1975 modules transformed`，NameLabelPrinting chunk `225.82 kB`（gzip `69.32 kB`），PDF renderer `4.11 kB`（gzip `2.11 kB`），fontkit `716.82 kB`（gzip `329.77 kB`），Noto 字体仍为独立按需资源；ESLint 通过；Playwright `6 passed (27.5s)`；Impeccable detector 返回 `[]`。
+- 失败详情：无代码失败；构建仅保留既有的少数大 chunk 体积提示。
+- 结论：三项用户报告缺陷均有代码回归保护；中文 PDF 使用完整字体会使单页文件约 `7.34MB`，这是移动阅读器兼容性所需的明确取舍，且字体仍只在用户点击正式导出后加载。
+- 物理边界：未执行实体打印；仍缺第二台普通打印机、目标标签纸和用户授权的耗材测试，因此不宣称物理验收完成。
+- 覆盖范围：`unit / e2e / responsive / build / lint / privacy / performance / compatibility`
+- 此结果在后续相关代码变化后是否仍有效：待 GitHub push/merge 完成后以最终 commit SHA 关联复核。
 
 #### 2026-09-14 — Phase 5/6 — 旧路径退出、Profile 选择与网络证据
 
@@ -300,12 +339,23 @@
 
 | Pages | Scene/labels | Browser/machine | Time | File size | Peak memory method/value | Result |
 | ---: | --- | --- | --- | --- | --- | --- |
-| 1 | 4×13 标签、中文文本 Scene | Windows/Node/Vitest | 1105.1 ms | 46.6 KiB | 未测 | 通过；含字体首次嵌入开销 |
-| 20 | 4×13 标签、中文文本 Scene | Windows/Node/Vitest | 891.6 ms | 100.8 KiB | 未测 | 通过 |
-| 100 | 4×13 标签、中文文本 Scene | Windows/Node/Vitest | 2428.3 ms | 332.7 KiB | 未测 | 通过 |
-| 200 | 4×13 标签、中文文本 Scene | Windows/Node/Vitest | 4378.0 ms | 622.5 KiB | 未测 | 通过；未宣称 streaming |
+| 1 | 4×13 标签、中文文本 Scene | Windows/Node/Vitest | 2284.3 ms | 7169.5 KiB | 未测 | 通过；完整字体首次嵌入 |
+| 20 | 4×13 标签、中文文本 Scene | Windows/Node/Vitest | 2390.8 ms | 7225.7 KiB | 未测 | 通过 |
+| 100 | 4×13 标签、中文文本 Scene | Windows/Node/Vitest | 4149.8 ms | 7461.7 KiB | 未测 | 通过 |
+| 200 | 4×13 标签、中文文本 Scene | Windows/Node/Vitest | 6711.0 ms | 7755.6 KiB | 未测 | 通过；未宣称 streaming |
 
-> Benchmark 使用临时 Vitest fixture，ASCII/CJK 均为 direct Scene→PDF；未包含图片解码和峰值内存采样。结果用于趋势观察，不作为跨机器 SLA。
+> CJK benchmark 使用临时 Vitest fixture，direct Scene→PDF 并使用完整 Noto Sans SC Regular；文件大小提升是为换取移动 PDF 阅读器兼容性。结果用于趋势观察，不作为跨机器 SLA。
+
+### CJK + image PDF generation
+
+| Pages | Scene/labels | Browser/machine | Time | File size | Image loads | Result |
+| ---: | --- | --- | --- | --- | ---: | --- |
+| 1 | 4×13 标签、中文文本 + 共享 PNG | Windows/Node/Vitest | 2284.3 ms | 7169.5 KiB | 1 | 通过 |
+| 20 | 4×13 标签、中文文本 + 共享 PNG | Windows/Node/Vitest | 2390.8 ms | 7225.7 KiB | 1 | 通过 |
+| 100 | 4×13 标签、中文文本 + 共享 PNG | Windows/Node/Vitest | 4149.8 ms | 7461.7 KiB | 1 | 通过 |
+| 200 | 4×13 标签、中文文本 + 共享 PNG | Windows/Node/Vitest | 6711.0 ms | 7755.6 KiB | 1 | 通过；未宣称 streaming |
+
+> 图片基准使用有效 PNG 资源并在每页引用同一 `assetId`；`SceneAssetRepository`/PDF image cache 在每个 PDF 内只加载一次。未测峰值内存。结果用于趋势观察，不作为跨机器 SLA。
 
 不要因不同机器结果不一致就虚构统一 SLA；记录条件和趋势。
 
