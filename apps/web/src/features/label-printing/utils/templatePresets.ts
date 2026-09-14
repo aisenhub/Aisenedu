@@ -79,9 +79,9 @@ export const DEFAULT_APPEARANCE: LabelAppearance = {
   borderRadiusMm: asMm(0),
   backgroundMaskOpacity: 0,
   backgroundMaskTone: 'light',
-  showClassTitle: true,
-  showNameTitle: true,
-  showFieldTitles: true,
+  showClassTitle: false,
+  showNameTitle: false,
+  showFieldTitles: false,
 }
 
 export function getTemplatePreset(templateId: string): LabelTemplatePreset {

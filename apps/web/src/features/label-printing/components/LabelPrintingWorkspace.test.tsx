@@ -31,6 +31,8 @@ describe('姓名贴工作台流程', () => {
     await user.click(screen.getByRole('button', { name: '使用这份名单' }))
 
     expect(within(screen.getByLabelText('当前工作台状态')).getByText('2 人')).toBeVisible()
+    expect(document.querySelector('.label-text')?.textContent).toBe('林小满')
+    expect(document.querySelector('.label-text')?.textContent).not.toContain('姓名：')
     expect(screen.getByText('第 1 / 1 页 · 页面按 mm 排版')).toBeVisible()
     await user.click(screen.getByRole('button', { name: /^打印校准：/ }))
     expect(screen.getByRole('button', { name: '生成打印 PDF' })).toBeEnabled()
@@ -121,18 +123,18 @@ describe('姓名贴工作台流程', () => {
     expect(within(screen.getByRole('list', { name: '姓名预览' })).getAllByText('一年级1班')).toHaveLength(2)
 
     await user.click(screen.getByRole('button', { name: '调整字段' }))
-    expect(screen.getByRole('switch', { name: '第 2 行是否显示标题' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('switch', { name: '第 2 行是否显示标题' })).toHaveAttribute('aria-checked', 'false')
     await user.click(screen.getByRole('switch', { name: '第 2 行是否显示标题' }))
     expect(screen.getByRole('button', { name: '更新字段' })).toBeVisible()
     await user.click(screen.getByRole('button', { name: '更新字段' }))
     expect(screen.getByRole('heading', { name: '字段设置' })).toBeVisible()
-    expect(useLabelPrintingStore.getState().draft.names[0]?.fields?.[1]?.showTitle).toBe(false)
+    expect(useLabelPrintingStore.getState().draft.names[0]?.fields?.[1]?.showTitle).toBe(true)
 
     await user.click(screen.getByRole('button', { name: '更新名单' }))
     expect(useLabelPrintingStore.getState().draft.names[0]?.fields).toEqual([
-      { label: '班级', value: '一年级1班', showTitle: true },
-      { label: '姓名', value: '林小满', showTitle: false },
-      { label: '座号', value: '01', showTitle: true },
+      { label: '班级', value: '一年级1班', showTitle: false },
+      { label: '姓名', value: '林小满', showTitle: true },
+      { label: '座号', value: '01', showTitle: false },
     ])
 
     await user.click(screen.getByRole('button', { name: /内容样式：楷体 · 14pt，待处理/ }))
@@ -150,7 +152,7 @@ describe('姓名贴工作台流程', () => {
     await user.click(screen.getByRole('button', { name: '恢复默认样式' }))
     expect(useLabelPrintingStore.getState().draft.appearance.fontSizePt).toBe(14)
     expect(useLabelPrintingStore.getState().draft.appearance.lineHeight).toBe(1.5)
-    expect(useLabelPrintingStore.getState().draft.names[0]?.fields?.[1]?.showTitle).toBe(false)
+    expect(useLabelPrintingStore.getState().draft.names[0]?.fields?.[1]?.showTitle).toBe(true)
     expect(screen.getByLabelText('行间距')).toHaveValue(1.5)
   })
 
