@@ -57,7 +57,11 @@ async function createPdfContext(scene: PrintScene, options: PdfRenderOptions) {
     const fontkitModule = await import('@pdf-lib/fontkit')
     pdfDoc.registerFontkit(((fontkitModule as { default?: unknown }).default ?? fontkitModule) as never)
     const bytes = await registry.loadPdfBytes(assetId)
-    const embeddedFont = await pdfDoc.embedFont(bytes, { subset: true })
+    // pdf-lib/fontkit's CJK subset path is not reliably rendered by every
+    // mobile PDF viewer. Keep the full approved CJK font in the PDF so glyph
+    // IDs and fallback behavior remain portable; ASCII stays on standard
+    // fonts and does not pay this cost.
+    const embeddedFont = await pdfDoc.embedFont(bytes, { subset: !containsNonAscii })
     fontCache.set(cacheKey, embeddedFont)
     return embeddedFont
   }

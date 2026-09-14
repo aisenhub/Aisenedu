@@ -9,9 +9,13 @@ function number(value: number) { return Number(value.toFixed(4)) }
 function attr(name: string, value: string | number) { return `${name}="${typeof value === 'number' ? number(value) : escapeXml(value)}"` }
 function matrixAttribute(matrix: NonNullable<ImageNode['transform']>) { return `matrix(${number(matrix.a)} ${number(matrix.b)} ${number(matrix.c)} ${number(matrix.d)} ${number(matrix.e)} ${number(matrix.f)})` }
 
+// Scene coordinates are millimetres (the SVG viewBox uses the same units),
+// while TextLayout stores font sizes in points for PDF and Canvas metrics.
+const MM_PER_PT = 25.4 / 72
+
 function renderText(layout: TextLayout, fill: string, opacity?: number) {
   const family = layout.font.browserCssFamily
-  return layout.lines.map((line) => `<text ${attr('x', line.xMm)} ${attr('y', line.baselineYMm)} ${attr('fill', fill)} ${attr('font-family', family)} ${attr('font-size', `${number(layout.fontSizePt)}pt`)} ${attr('font-weight', layout.font.weight)} ${opacity === undefined ? '' : attr('opacity', opacity)}>${escapeXml(line.text)}</text>`).join('')
+  return layout.lines.map((line) => `<text ${attr('x', line.xMm)} ${attr('y', line.baselineYMm)} ${attr('fill', fill)} ${attr('font-family', family)} ${attr('font-size', number(layout.fontSizePt * MM_PER_PT))} ${attr('font-weight', layout.font.weight)} ${opacity === undefined ? '' : attr('opacity', opacity)}>${escapeXml(line.text)}</text>`).join('')
 }
 
 function renderImage(node: ImageNode, assets?: SceneAssetRepository) {

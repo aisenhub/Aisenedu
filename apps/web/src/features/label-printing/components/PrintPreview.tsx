@@ -128,7 +128,7 @@ export function PrintPreview({ appearance, onScaleChange, pages, scale }: PrintP
         {viewMode === 'detail' && detailPage ? <div className="flex min-h-full min-w-full flex-col items-center justify-center gap-4">
           <div className="rounded-xl border border-primary/25 bg-surface p-4 shadow-sm">
             <div style={{ height: `${Number(detailPage.heightMm) * 2.4}mm`, width: `${Number(detailPage.widthMm) * 2.4}mm` }}>
-              <div style={{ height: `${detailPage.heightMm}mm`, transform: 'scale(2.4)', transformOrigin: 'top left', width: `${detailPage.widthMm}mm` }}><SvgPrintPreviewPage appearance={appearance} page={detailPage} previewOnly selectedCellId={selectedCell?.id} /></div>
+              <div style={{ height: `${detailPage.heightMm}mm`, transform: 'scale(2.4)', transformOrigin: 'top left', width: `${detailPage.widthMm}mm` }}><SvgPrintPreviewPage appearance={appearance} page={detailPage} previewOnly selectedCellId="detail-cell" /></div>
             </div>
           </div>
           <div className="w-full max-w-xl rounded-xl border border-border bg-surface p-4">

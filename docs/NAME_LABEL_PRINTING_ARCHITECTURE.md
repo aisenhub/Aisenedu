@@ -44,7 +44,7 @@
 | 首版数据边界 | 浏览器内存，设置可单独保存但不保存学生姓名 | 减少教育数据暴露；当前工程尚未接入认证与班级模型。 |
 | 排版单位 | 所有纸张与布局计算使用 `mm` | CSS 像素会随显示缩放变化，不能作为标签纸的业务单位。 |
 | 打印方式 | `PhysicalTemplate` → `PageLayout[]` → `PrintScene` → SVG/PDF；浏览器打印保留兼容路径 | 屏幕、PDF 和浏览器打印共享同一个场景，不在不同输出端重复排版。 |
-| PDF | `pdf-lib@1.17.1` + `@pdf-lib/fontkit@1.1.1`，输出 `PrintScaling.None` | 页面尺寸和矢量图形可控；中文嵌入随应用分发且附 OFL 1.1 的 Noto Sans SC Regular 子集，其他字体使用明确 fallback。 |
+| PDF | `pdf-lib@1.17.1` + `@pdf-lib/fontkit@1.1.1`，输出 `PrintScaling.None` | 页面尺寸和矢量图形可控；中文嵌入随应用分发且附 OFL 1.1 的 Noto Sans SC Regular 完整字体，CJK 不走子集以兼容移动 PDF 阅读器；其他字体使用明确 fallback。 |
 | 导入格式 | 文本、CSV、XLSX | 教师常从 Excel 导出；导入后的数据必须经过统一的列选择和清洗层。 |
 | 全局状态 | feature 内 Zustand store 保存会影响多个面板的 UI/编辑状态 | 满足工程状态规范；布局计算和导入解析保持纯函数。 |
 | 持久化 | 只保存不含名单的纸张、PhysicalTemplate 映射和外观设置 | 没有账号和授权链路时，学生姓名、导入行、背景 object URL 和校准原始测量不得进入长生命周期存储。 |
@@ -135,7 +135,7 @@
 | 信息层级 | 页面标题 → 当前名单/页数状态 → 分组配置 → 打印预览；不以颜色单独表示配置是否有效。 |
 | 主操作 | 每个时刻只保留一个主操作“打印姓名贴”；导入、校准、清空与重置均为次级/危险操作。 |
 | 间距与网格 | 使用 4px/8px 节奏；桌面配置栏和预览区以稳定网格对齐，避免装饰性渐变或无意义的卡片嵌套。 |
-| 字体 | 屏幕预览沿用系统字体栈；正式 PDF 对中文使用随应用分发且附带 OFL 1.1 文本的 Noto Sans SC Regular，楷体/衬线/等宽中文使用明确授权的中文 PDF fallback，不静默读取用户系统字体。 |
+| 字体 | 屏幕预览沿用系统字体栈；正式 PDF 对中文使用随应用分发且附带 OFL 1.1 文本的 Noto Sans SC Regular 完整字体，避免 CJK 子集在移动阅读器中的兼容性问题；楷体/衬线/等宽中文使用明确授权的中文 PDF fallback，不静默读取用户系统字体。 |
 | 色彩 | 在样式中使用语义 token（主操作、表面、边框、错误、成功、焦点），而非在业务组件散落十六进制色值；常规文字与背景至少 4.5:1 对比度。 |
 | 动效 | 只用于面板展开、状态反馈等因果明确的过渡，建议 150–250ms；只动画 `opacity`/`transform`，并在减少动态效果偏好下关闭。 |
 
@@ -437,7 +437,7 @@ gridHeight <= availableHeight
 
 - 优先复用 React、React Router、Zustand、Tailwind、Lucide 与现有 shadcn/ui 组件。
 - 基础 UI 和测试依赖在 NL-00 一次性建立：按需生成的 shadcn/ui 基础组件、Vitest、React Testing Library 与浏览器验证工具只服务于本项目，不引入第二套 UI 框架。
-- `react-to-print` 使用 v3 API，唯一职责是浏览器兼容打印 iframe/生命周期；其余布局仍由 `PrintScene` 控制。正式 PDF 使用 `pdf-lib` + `fontkit`，FontAssetRegistry 按需嵌入本地 Noto Sans SC Regular 子集，其他字体使用明确 fallback 或错误提示。
+- `react-to-print` 使用 v3 API，唯一职责是浏览器兼容打印 iframe/生命周期；其余布局仍由 `PrintScene` 控制。正式 PDF 使用 `pdf-lib` + `fontkit`，FontAssetRegistry 仅在导出动作中按需嵌入本地 Noto Sans SC Regular 完整字体，避免 CJK subset 在移动阅读器中出现缺字；其他字体使用明确 fallback 或错误提示。
 - XLSX 读取使用 `read-excel-file@9.3.10`，采用 MIT 许可证；仅在导入时动态加载，不得把解析库暴露到通用 UI 组件中。该库的兼容入口和浏览器入口均可读取 `ArrayBuffer`，默认读取首个工作表，导入服务按顺序尝试两种入口。
 - 不引入画布编辑器或第二套 UI 框架；PDF 生成使用已通过结构测试的 `pdf-lib` 路径，中文字体资产由 FontAssetRegistry 按需嵌入并随仓库附带许可证。
 
@@ -494,7 +494,7 @@ label_project_items
 | --- | --- | --- |
 | 纸张/打印机误差 | Device Geometry + 输出路径 Profile + 通用模板 | 收集实物验证的标签纸型号后再承诺精确预设。 |
 | XLSX 包体积、兼容性与恶意大文件 | `read-excel-file` 动态加载、文件/行列上限，必要时 Worker | 用真实学校导出文件测量包体积与解析耗时。 |
-| 中文字体在不同系统差异 | 浏览器预览沿用系统字体栈；正式 PDF 嵌入 OFL 1.1 的 Noto Sans SC Regular 子集 | 继续记录字体物理输出与不同浏览器的差异；楷体/衬线中文使用明确 fallback。 |
+| 中文字体在不同系统差异 | 浏览器预览沿用系统字体栈；正式 PDF 嵌入 OFL 1.1 的 Noto Sans SC Regular 完整字体，CJK 不使用 pdf-lib/fontkit 子集 | 继续记录字体物理输出与不同浏览器/阅读器的差异；楷体/衬线中文使用明确 fallback。 |
 | 云端保存 | MVP 不做 | 确认租户、认证、班级归属、保留期和删除流程。 |
 | 内容字段与输出模式 | MVP 打印批量姓名贴；班级列为可选字段 | 班级管理、拼音、学号、单人铺满、桌牌和主题模板均须按第 4.5 节逐项完成隐私、排版与打印验证后再扩展。 |
 
