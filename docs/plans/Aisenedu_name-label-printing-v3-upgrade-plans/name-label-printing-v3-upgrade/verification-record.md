@@ -243,7 +243,7 @@
 - 退出码：全部为 `0`
 - 结果摘要：完整 Vitest `19 passed / 65 passed`；V8 statements/lines `66.24%`、branches `74.54%`、functions `61.62%`；生产构建 `1975 modules transformed`；Lint 通过；Playwright E2E `6 passed`；Impeccable detector 返回 `[]`。
 - 覆盖范围：`unit / component / e2e / responsive / build / lint / compatibility`
-- 此结果在后续相关代码变化后是否仍有效：待本轮 GitHub push/merge 完成后以最终 commit SHA 关联复核。
+- 此结果在后续相关代码变化后是否仍有效：已由本轮 GitHub merge commit `d174f139c3c9b3a4894c8c56dc63754a4ede314f` 关联复核。
 
 #### 2026-09-14 — Phase 5/6 — 旧路径退出、Profile 选择与网络证据
 
@@ -401,6 +401,19 @@
 - Merge/push command/result：`git merge --no-ff codex/name-label-printing-mobile-pdf-fixes` 成功；`git push origin main` 成功
 - Remote `main` contains SHA：已验证；远端 `main` 指向 `3ef18b725f2468879240778e8954d29a9a9c279e`
 - GitHub main link：[merge commit](https://github.com/aisenhub/Aisenedu/commit/3ef18b725f2468879240778e8954d29a9a9c279e)，[main](https://github.com/aisenhub/Aisenedu/tree/main)
+- Push failure/retry：无。
+
+### 2026-09-14 — 通用内容原样打印修复
+
+- Branch：`codex/name-label-printing-generic-raw-output` → `main`
+- Code commit SHA：`684d0e08fa3b1356e2f9ecc9ce4aa998251a02a6`
+- Commit message：`fix: preserve raw label content by default`
+- Push command/result：`git push -u origin codex/name-label-printing-generic-raw-output` 成功
+- GitHub commit/branch link：[fix commit](https://github.com/aisenhub/Aisenedu/commit/684d0e08fa3b1356e2f9ecc9ce4aa998251a02a6)，[fix branch](https://github.com/aisenhub/Aisenedu/tree/codex/name-label-printing-generic-raw-output)
+- Merge commit SHA：`d174f139c3c9b3a4894c8c56dc63754a4ede314f`
+- Merge/push command/result：`git merge --no-ff codex/name-label-printing-generic-raw-output` 成功；`git push origin main` 成功
+- Remote `main` contains SHA：已验证；远端 `main` 指向 `d174f139c3c9b3a4894c8c56dc63754a4ede314f`
+- GitHub main link：[merge commit](https://github.com/aisenhub/Aisenedu/commit/d174f139c3c9b3a4894c8c56dc63754a4ede314f)，[main](https://github.com/aisenhub/Aisenedu/tree/main)
 - Push failure/retry：无。
 
 ## 8. 交接信息
