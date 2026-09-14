@@ -252,7 +252,7 @@
 - 修复：浏览器打印标签页和 Gate 1 测试页都为每个 `.print-svg-page` 注入对应 `PrintScene` 页面宽高（mm）；SVG 继续填满同尺寸容器，确保打印 iframe 中按纸张真实尺寸布局。
 - 回归结果：模拟 `react-to-print` 克隆到独立 body 并切换 `print` media 后，A4 页面布局为约 `793.7 × 1122.5 CSS px`，包含 `14` 个文本节点和 `26` 个矩形节点；7 条 Playwright E2E 全部通过。
 - 物理边界：本次验证覆盖浏览器打印预览 DOM 和 CSS 尺寸，未执行实体打印；实际打印仍需用户设备、驱动和目标纸材校准。
-- 此结果在后续相关代码变化后是否仍有效：待本轮 GitHub push/merge 完成后以最终 commit SHA 关联复核。
+- 此结果在后续相关代码变化后是否仍有效：已由本轮 GitHub merge commit `97a961260db6b42da3010a217afcda7345a55533` 关联复核。
 
 #### 2026-09-14 — Phase 5/6 — 旧路径退出、Profile 选择与网络证据
 
@@ -423,6 +423,19 @@
 - Merge/push command/result：`git merge --no-ff codex/name-label-printing-generic-raw-output` 成功；`git push origin main` 成功
 - Remote `main` contains SHA：已验证；远端 `main` 指向 `d174f139c3c9b3a4894c8c56dc63754a4ede314f`
 - GitHub main link：[merge commit](https://github.com/aisenhub/Aisenedu/commit/d174f139c3c9b3a4894c8c56dc63754a4ede314f)，[main](https://github.com/aisenhub/Aisenedu/tree/main)
+- Push failure/retry：无。
+
+### 2026-09-14 — Gate 1 兼容模式设备测试页修复
+
+- Branch：`codex/gate1-calibration-print-preview` → `main`
+- Code commit SHA：`75813a54b9a43977fa3d7f92ae724e34f7157ab6`
+- Commit message：`fix: preserve calibration page dimensions in browser print`
+- Push command/result：`git push -u origin codex/gate1-calibration-print-preview` 成功
+- GitHub commit/branch link：[fix commit](https://github.com/aisenhub/Aisenedu/commit/75813a54b9a43977fa3d7f92ae724e34f7157ab6)，[fix branch](https://github.com/aisenhub/Aisenedu/tree/codex/gate1-calibration-print-preview)
+- Merge commit SHA：`97a961260db6b42da3010a217afcda7345a55533`
+- Merge/push command/result：`git merge --no-ff codex/gate1-calibration-print-preview` 成功；`git push origin main` 成功
+- Remote `main` contains SHA：已验证；远端 `main` 指向 `97a961260db6b42da3010a217afcda7345a55533`
+- GitHub main link：[merge commit](https://github.com/aisenhub/Aisenedu/commit/97a961260db6b42da3010a217afcda7345a55533)，[main](https://github.com/aisenhub/Aisenedu/tree/main)
 - Push failure/retry：无。
 
 ## 8. 交接信息
