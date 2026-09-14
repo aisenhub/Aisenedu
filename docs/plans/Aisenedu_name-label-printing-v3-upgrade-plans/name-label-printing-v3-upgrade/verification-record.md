@@ -326,7 +326,7 @@
 - Merge/push command/result：`git merge --no-ff ...` 成功；`git push origin main` 成功
 - Remote `main` contains SHA：已验证；远端 `main` 指向 `20059ecadabbf663474c7286f93e95d908b7386c`
 - GitHub main link：[merge commit](https://github.com/aisenhub/Aisenedu/commit/20059ecadabbf663474c7286f93e95d908b7386c)，[main](https://github.com/aisenhub/Aisenedu/tree/main)
-- Verification-record update commit：本记录将在 main 上单独提交并随后推送。
+- Verification-record update commit：`c1b8fd42c8ea026a4db0832bb2d135e4b5702971`，已在 `main` 上提交并成功推送。
 - Push failure/retry：无。
 
 ## 8. 交接信息
