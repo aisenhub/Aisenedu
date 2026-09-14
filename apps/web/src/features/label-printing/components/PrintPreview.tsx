@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Button } from '../../../components/ui/button'
 import { asMm, type LabelAppearance, type LayoutCell, type PageLayout } from '../types'
-import { LabelPageCanvas } from './LabelPageCanvas'
+import { SvgPrintPreviewPage } from './SvgPrintPreviewPage'
 
 type PrintPreviewProps = Readonly<{
   pages: readonly PageLayout[]
@@ -128,7 +128,7 @@ export function PrintPreview({ appearance, onScaleChange, pages, scale }: PrintP
         {viewMode === 'detail' && detailPage ? <div className="flex min-h-full min-w-full flex-col items-center justify-center gap-4">
           <div className="rounded-xl border border-primary/25 bg-surface p-4 shadow-sm">
             <div style={{ height: `${Number(detailPage.heightMm) * 2.4}mm`, width: `${Number(detailPage.widthMm) * 2.4}mm` }}>
-              <div style={{ height: `${detailPage.heightMm}mm`, transform: 'scale(2.4)', transformOrigin: 'top left', width: `${detailPage.widthMm}mm` }}><LabelPageCanvas appearance={appearance} page={detailPage} screenMode /></div>
+              <div style={{ height: `${detailPage.heightMm}mm`, transform: 'scale(2.4)', transformOrigin: 'top left', width: `${detailPage.widthMm}mm` }}><SvgPrintPreviewPage appearance={appearance} page={detailPage} previewOnly selectedCellId={selectedCell?.id} /></div>
             </div>
           </div>
           <div className="w-full max-w-xl rounded-xl border border-border bg-surface p-4">
@@ -138,7 +138,7 @@ export function PrintPreview({ appearance, onScaleChange, pages, scale }: PrintP
         </div> : <div>
           <div className="mx-auto" style={{ height: `${scaledHeight}mm`, width: `${scaledWidth}mm` }}>
             <div ref={pageMeasureRef} style={{ height: `${page.heightMm}mm`, transform: `scale(${mapScale})`, transformOrigin: 'top left', width: `${page.widthMm}mm` }}>
-              <LabelPageCanvas appearance={appearance} onCellClick={selectCell} page={page} screenMode selectedCellId={viewMode === 'detail' ? selectedCell?.id : undefined} />
+              <SvgPrintPreviewPage appearance={appearance} onCellClick={selectCell} page={page} previewOnly selectedCellId={viewMode === 'detail' ? selectedCell?.id : undefined} />
             </div>
           </div>
         </div>}

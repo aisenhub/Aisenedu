@@ -1,6 +1,6 @@
 # 学生姓名贴生成与打印架构
 
-> 状态：已确认的 MVP 架构。本文是姓名贴功能的产品、前端、打印、数据与安全边界的唯一设计依据；实际开发若需要偏离，先更新本文与对应任务。
+> 状态：v3.1 实施架构。本文是姓名贴功能的产品、前端、打印、数据与安全边界的唯一设计依据；当前实现已切换到 PhysicalTemplate + Scene + SVG/PDF 输出，实际开发若需要偏离，先更新本文与对应任务。
 
 ## 1. 目标与范围
 
@@ -14,11 +14,11 @@
 
 - 粘贴名单、输入名单、导入 UTF-8 CSV 与 XLSX 文件。
 - 从导入数据中选择姓名列，并可选选择班级列；清洗空白行并提示无效项，重复内容按原样保留。
-- A4 纵向/横向模板与自定义纸张；以 mm 为单位调整页边距、标签尺寸、行列和间距。
+- A4 纵向/横向模板与自定义纸张；以 mm 为单位调整纸张、标签尺寸、起始位置、行列和标签节距。
 - 标签排版面板：用户直接设置纸张、标签尺寸、边距、间距和行列数量；不提供快捷模板选择，支持恢复默认参数。
 - 姓名贴样式：字体与文字、外边框、内边框、背景四类设置；颜色支持配色预设、分类色盘和 HEX 自定义。
-- 按指定起始空白标签位置排版；支持多页和打印前的实际尺寸预览。
-- 浏览器打印；打印校准页与 X/Y 偏移量。
+- 按指定起始空白标签位置排版；支持多页和打印前的实际尺寸 SVG 预览。
+- 生成关闭打印缩放的矢量 PDF；浏览器打印作为兼容路径；提供独立设备几何测试页和模板覆盖测试页。
 - 打印专用样式、键盘操作、可访问的表单错误与窄屏可用界面。
 
 ### 1.3 不在 MVP 范围
@@ -26,7 +26,7 @@
 - 班级管理、学生档案、账号、组织、多人协作或云端保存。单次姓名贴导入中的班级文本属于可选打印字段，不等同于班级管理能力。
 - 上传含姓名的文件到 Supabase Storage 或其他第三方。
 - 条码/二维码、头像、复杂富文本、拖拽画布、模板市场。
-- 由前端自行生成可保证所有打印机一致的 PDF；首版由浏览器打印引擎输出，PDF 作为后续增强能力。
+- 不能由前端保证所有打印机一致；PDF 仅保证页面尺寸、矢量图形和明确的字体资产策略，真实设备仍需 100% 打印与校准。
 - 移动端打印优化。窄屏仅保证名单导入、参数调整与预览可读；建议在桌面浏览器完成校准和打印。
 
 ### 1.4 成功标准
@@ -43,11 +43,11 @@
 | --- | --- | --- |
 | 首版数据边界 | 浏览器内存，设置可单独保存但不保存学生姓名 | 减少教育数据暴露；当前工程尚未接入认证与班级模型。 |
 | 排版单位 | 所有纸张与布局计算使用 `mm` | CSS 像素会随显示缩放变化，不能作为标签纸的业务单位。 |
-| 打印方式 | DOM 预览 + `@media print` + `react-to-print` | 与 React 直接匹配，中文字体呈现由浏览器负责，且预览与打印可复用同一组件。 |
-| PDF | 不作为 MVP 必需输出 | 客户端 PDF 需解决中文字体嵌入与浏览器/打印机差异，风险高于直接打印。 |
+| 打印方式 | `PhysicalTemplate` → `PageLayout[]` → `PrintScene` → SVG/PDF；浏览器打印保留兼容路径 | 屏幕、PDF 和浏览器打印共享同一个场景，不在不同输出端重复排版。 |
+| PDF | `pdf-lib@1.17.1` + `@pdf-lib/fontkit@1.1.1`，输出 `PrintScaling.None` | 页面尺寸和矢量图形可控；中文嵌入随应用分发且附 OFL 1.1 的 Noto Sans SC Regular 子集，其他字体使用明确 fallback。 |
 | 导入格式 | 文本、CSV、XLSX | 教师常从 Excel 导出；导入后的数据必须经过统一的列选择和清洗层。 |
 | 全局状态 | feature 内 Zustand store 保存会影响多个面板的 UI/编辑状态 | 满足工程状态规范；布局计算和导入解析保持纯函数。 |
-| 持久化 | MVP 不创建数据库表或 Supabase 迁移 | 没有账号和授权链路时，持久化学生姓名违反最小权限原则。 |
+| 持久化 | 只保存不含名单的纸张、PhysicalTemplate 映射和外观设置 | 没有账号和授权链路时，学生姓名、导入行、背景 object URL 和校准原始测量不得进入长生命周期存储。 |
 
 ## 3. 用户、任务与流程
 
@@ -78,7 +78,7 @@
 | 空行、重复或过长姓名 | 空行移除，重复项按原顺序保留且不做检查或标记，超长项提示用户修改或允许换行。 |
 | 参数无法容纳标签格 | 相关字段显示内联错误，打印与导出禁用，预览保留最后有效布局。 |
 | 用户要清空名单 | 使用确认对话框，清除后回到空状态；若有导入操作，提供短暂“撤销”。 |
-| 打印机位置偏差 | 不自动猜测；提供校准页与可见的 X/Y 偏移量，偏移只作用于打印布局。 |
+| 打印机位置偏差 | 不自动猜测；提供独立设备几何页、重复测量和受策略约束的补偿模型；未通过门槛时不保存高级补偿。 |
 
 ## 4. 信息架构与交互设计
 
@@ -106,8 +106,8 @@
 ├── 内容与样式面板
 │   └── 姓名/班级字段与标题开关、字体与文字、外边框、内边框、背景
 ├── 打印与校准面板
-│   ├── 打印摘要、排版检查与“打印姓名贴”
-│   └── 默认折叠的校准设置、偏移量与打印兼容说明
+│   ├── 打印摘要、排版检查与“生成打印 PDF”
+│   └── 默认折叠的设备几何测试页、模板覆盖说明与浏览器兼容路径
 └── 打印预览区
     ├── 页码与缩放控制（仅屏幕）
     └── A4 实尺寸页面
@@ -135,7 +135,7 @@
 | 信息层级 | 页面标题 → 当前名单/页数状态 → 分组配置 → 打印预览；不以颜色单独表示配置是否有效。 |
 | 主操作 | 每个时刻只保留一个主操作“打印姓名贴”；导入、校准、清空与重置均为次级/危险操作。 |
 | 间距与网格 | 使用 4px/8px 节奏；桌面配置栏和预览区以稳定网格对齐，避免装饰性渐变或无意义的卡片嵌套。 |
-| 字体 | 屏幕沿用系统无衬线字体栈；打印文本沿用可用的系统字体栈并在预览中真实呈现。首版不在线加载字体，也不以设计字体替代中文可用性。 |
+| 字体 | 屏幕预览沿用系统字体栈；正式 PDF 对中文使用随应用分发且附带 OFL 1.1 文本的 Noto Sans SC Regular，楷体/衬线/等宽中文使用明确授权的中文 PDF fallback，不静默读取用户系统字体。 |
 | 色彩 | 在样式中使用语义 token（主操作、表面、边框、错误、成功、焦点），而非在业务组件散落十六进制色值；常规文字与背景至少 4.5:1 对比度。 |
 | 动效 | 只用于面板展开、状态反馈等因果明确的过渡，建议 150–250ms；只动画 `opacity`/`transform`，并在减少动态效果偏好下关闭。 |
 
@@ -177,7 +177,8 @@ apps/web/src/
 │       │   ├── LabelContentPanel.tsx
 │       │   ├── PrintCalibrationPanel.tsx
 │       │   ├── PrintPreview.tsx
-│       │   ├── PrintableLabelDocument.tsx
+│       │   ├── PrintableSvgDocument.tsx
+│       │   ├── SvgPrintPreviewPage.tsx
 │       │   └── PrintableCalibrationDocument.tsx
 │       ├── hooks/
 │       │   ├── useLabelImport.ts
@@ -200,11 +201,40 @@ apps/web/src/
     └── print.css                        # 只含打印媒介、@page 与 mm 规则
 ```
 
-组件不得直接读取文件、调用 Supabase 或将学生姓名写入浏览器持久化存储。文件解析进入 `services/importNames.ts`；`utils/layout.ts` 必须无副作用且可独立测试。
+组件不得直接读取文件、调用 Supabase 或将学生姓名写入浏览器持久化存储。文件解析进入 `services/importNames.ts`；`layout/createPageLayouts.ts` 必须无副作用且可独立测试。
 
 ## 6. 数据模型与状态
 
 ### 6.1 领域类型
+
+v3.1 的打印主链以 `PhysicalTemplate` 和 `LabelProject` 为稳定领域契约；下面的 `PaperSettings`/`LabelLayout` 仅作为现有表单与 legacy config 的兼容形状，`origin/pitch` 在进入 LayoutEngine 时由 `PhysicalTemplate` 统一提供，校准补偿不写回模板。
+
+```ts
+type PhysicalTemplate = {
+  id: string
+  version: number
+  name: string
+  paper: Pick<PaperSettings, 'size' | 'widthMm' | 'heightMm' | 'orientation' | 'cutStyle'>
+  grid: {
+    labelWidthMm: LengthMm
+    labelHeightMm: LengthMm
+    columns: number
+    rows: number
+    originXmm: LengthMm
+    originYmm: LengthMm
+    pitchXmm: LengthMm
+    pitchYmm: LengthMm
+  }
+  verification: { physicallyVerified: boolean; note?: string }
+}
+
+type LabelProject = {
+  names: StudentName[] // 仅当前页面会话
+  templateId: string
+  firstLabelIndex: number
+  appearance: LabelAppearance // 仅当前页面会话；安全外观设置可单独持久化
+}
+```
 
 ```ts
 type LengthMm = number
@@ -238,9 +268,7 @@ type LabelLayout = {
   rows: number
   gapXmm: LengthMm
   gapYmm: LengthMm
-  firstLabelIndex: number // 内部兼容字段，当前固定为 0，不向用户暴露设置
-  offsetXmm: LengthMm
-  offsetYmm: LengthMm
+  firstLabelIndex: number // 项目分页状态，当前固定为 0，不向用户暴露设置
 }
 
 type TemplateContentCapacity = {
@@ -253,7 +281,7 @@ type LabelTemplatePreset = {
   name: string
   version: number
   paper: PaperSettings
-  layout: Omit<LabelLayout, 'firstLabelIndex' | 'offsetXmm' | 'offsetYmm'>
+  layout: Omit<LabelLayout, 'firstLabelIndex'>
   contentCapacity: TemplateContentCapacity
   isPhysicallyVerified: boolean
 }
@@ -296,13 +324,13 @@ type LabelProjectDraft = {
 
 ### 6.2 Zustand Store 职责
 
-`useLabelPrintingStore` 保存最后一次有效的当前草稿、导入步骤、选中姓名列、预览缩放、打印状态与非持久化的提示状态，并通过版本化 `localStorage` 自动恢复名单和项目草稿。原始表单字符串由对应的 feature hook 持有；store 不保存服务端数据，也不负责计算页面位置。
+`useLabelPrintingStore` 保存当前会话的名单、导入步骤、预览缩放、打印状态与非持久化提示状态；通过版本化安全存储只恢复不含名单的纸张、排版和外观设置。原始表单字符串由对应的 feature hook 持有；store 不保存服务端数据，也不负责计算页面位置。
 
-建议的 action：`setNames`、`restoreSelectedTemplateDefaults`、`updatePaper`、`updateLayout`、`updateAppearance`、`setPreviewScale`、`resetDraft`。恢复默认参数只重置纸张、布局、外观和校准偏移，不清空姓名名单。批量导入仅调用一次 `setNames`，不得逐行触发大量状态更新。
+建议的 action：`setNames`、`restoreSelectedTemplateDefaults`、`updatePaper`、`updateLayout`、`updateAppearance`、`setPreviewScale`、`resetDraft`。恢复默认参数只重置纸张、布局、外观和当前 Profile 选择，不清空姓名名单。批量导入仅调用一次 `setNames`，不得逐行触发大量状态更新。
 
 ### 6.3 隐私与临时数据
 
-- 已清洗的姓名、班级、字段顺序及项目纸张/排版/样式草稿默认写入版本化 `localStorage`，刷新后恢复；不写入 `sessionStorage`、URL、分析事件、错误日志或网络请求。
+- 项目纸张/排版/样式设置可写入版本化 `localStorage`，但已清洗姓名、班级、字段顺序、导入行、原始文件名、背景 object URL 和原始校准测量不得写入；刷新后名单回到空状态。不写入 `sessionStorage`、URL、分析事件、错误日志或网络请求。
 - 临时背景图片只保留在当前浏览器会话中；其二进制内容和对象 URL 不写入项目草稿，刷新后回到纯色背景。
 - 读取文件使用浏览器 File API，完成解析后只保留已清洗的数据；不上传原文件。
 
@@ -338,7 +366,7 @@ XLSX 解析使用按需加载的 `read-excel-file@9.3.10` 兼容入口和浏览�
 
 ### 8.1 单一布局算法
 
-`layout.ts` 计算所有输出格的位置。屏幕预览和打印文档都消费同一个 `PageLayout[]`，不得分别计算分页。
+`PhysicalTemplate` 描述纸张、标签尺寸、`originX/Y` 和 `pitchX/Y`；`layout.ts` 计算所有输出格的位置。屏幕 SVG 预览、PDF 和浏览器打印文档都消费同一个 `PageLayout[]`/`PrintScene`，不得分别计算分页。
 
 ```text
 capacity = columns × rows
@@ -347,8 +375,8 @@ pageIndex = floor(absoluteSlot / capacity)
 slotIndex = absoluteSlot % capacity
 row = floor(slotIndex / columns)
 column = slotIndex % columns
-x = marginLeft + column × (labelWidth + gapX) + offsetX
-y = marginTop + row × (labelHeight + gapY) + offsetY
+x = originX + column × pitchX
+y = originY + row × pitchY
 ```
 
 每一个输出页都有 `widthMm`、`heightMm` 和二维 cell 数组。当前从每页第一格开始填充，末页不足的格子明确表示为 `empty`。
@@ -366,24 +394,24 @@ gridHeight <= availableHeight
 `firstLabelIndex` 固定为 `0`；用户不需要配置起始空白格。
 ```
 
-偏移仅影响最终 cell 的 `translate(mm, mm)`，不会参与是否容纳的校验。默认限制为 `-10mm` 至 `10mm`，步长 `0.1mm`。
+设备补偿不再写入 `LabelLayout`；它只作为匹配输出路径的 Calibration Profile 矩阵包裹 Ideal Scene，且最多应用一次。模板位置只由 `originX/Y` 与 `pitchX/Y` 决定。
 
 ### 8.3 CSS 与打印
 
-- `PrintableLabelDocument` 的外层页面使用 `width: <paperWidth>mm` 与 `height: <paperHeight>mm`。
-- 标签用绝对定位或固定网格定位；所有关键宽高、边距、间距均使用 `mm`。
-- `print.css` 内使用 `@media print`：隐藏应用导航、表单、屏幕缩放控件与辅助文案；仅保留可打印文档。
+- `PrintScene` 的 SVG 页面使用 `width="<paperWidth>mm"`、`height="<paperHeight>mm"` 和相同的 mm viewBox。
+- PDF 在唯一的输出边界把 mm 转换为 points，MediaBox 使用纸张的精确物理尺寸，并设置 `PrintScaling.None`。
+- `print.css` 内使用 `@media print`：隐藏应用导航、表单、屏幕缩放控件与辅助文案；保留由同一场景序列化的 SVG 文档。
 - `@page` 的尺寸/方向由当前模板提供。打印对话框中应提示用户关闭“适应页面/缩放”、设置 `100%`，并按需要启用背景图形。
-- 使用 `react-to-print` 把 `PrintableLabelDocument` 传给浏览器打印窗口。若打印窗口被拦截或 API 抛错，显示可恢复的错误提示。
+- 浏览器兼容路径使用 `react-to-print` 把由 `PrintScene` 序列化的 `PrintableSvgDocument` 传给打印窗口。若打印窗口被拦截或 API 抛错，显示可恢复的错误提示；正式路径使用同一 Scene 生成 Vector PDF。
 - 浏览器和打印机都有非可控页边距；不宣称所有打印机在未校准时达到精确对齐。
 
 ### 8.4 校准页
 
-校准页使用当前纸张和网格，不使用学生姓名。至少显示边界、基准十字与 X/Y 读数提示；教师测量实际偏差后输入正负偏移。校准输出必须明确标记“校准页，不能用于最终姓名贴”。
+校准输出分为两个独立文档：Device Geometry Page 只验证设备的平移、轴向缩放、旋转/相似变换和仿射风险；Template Overlay Page 只验证具体模板的 origin、pitch、标签尺寸和切线关系。两者都不使用学生姓名。高级模型需要至少三次同配置重复测量，且必须通过稳定性和残差门槛后才允许保存 profile；软件阈值是临时策略，不能替代真实打印机实测。
 
 打印前在校准面板展示“打印兼容说明”：默认使用 A4 标签纸、选择 100% 缩放、关闭“适合页面”；若使用自定义纸张尺寸，应先在打印机驱动或系统打印对话框中确认该纸张可用。页面不能检测或改变打印机进纸方式、边距能力或自定义纸张支持，因此这些内容只能作为用户确认的指导信息，不能伪装为可自动执行的开关。
 
-所有会影响物理输出的字段（纸张尺寸、标签尺寸、页边距、标签间距、X/Y 偏移）必须提供就近帮助说明，解释其作用与单位；帮助不能只用无文字图标表达。
+所有会影响物理输出的字段（纸张尺寸、标签尺寸、originX/Y、pitchX/Y）必须提供就近帮助说明，解释其作用与单位；帮助不能只用无文字图标表达。
 
 ## 9. 模板策略
 
@@ -397,7 +425,7 @@ gridHeight <= availableHeight
 
 每个预设包含稳定 `id`、显示名、版本、纸张、布局和推荐字体尺寸。后续加入经过实物验证的品牌型号时，需记录测量来源、纸张批次、打印机校准条件与版本。
 
-排版面板提供“恢复默认参数”。执行前显示将重置哪些设置（纸张、行列、尺寸、间距、外观、校准偏移），但保留当前姓名名单；打印始终从每页第一格开始。字段导入最多选择四列，分别对应标签中的一至四行内容；姓名仍是第一字段，其他字段按用户选择顺序排列。
+排版面板提供“恢复默认参数”。执行前显示将重置哪些设置（纸张、行列、尺寸、间距、外观和当前 Profile 选择），但保留当前姓名名单；打印始终从每页第一格开始。字段导入最多选择四列，分别对应标签中的一至四行内容；姓名仍是第一字段，其他字段按用户选择顺序排列。
 
 ### 9.2 自定义
 
@@ -409,9 +437,9 @@ gridHeight <= availableHeight
 
 - 优先复用 React、React Router、Zustand、Tailwind、Lucide 与现有 shadcn/ui 组件。
 - 基础 UI 和测试依赖在 NL-00 一次性建立：按需生成的 shadcn/ui 基础组件、Vitest、React Testing Library 与浏览器验证工具只服务于本项目，不引入第二套 UI 框架。
-- `react-to-print` 使用 v3 API（实施时锁定当期兼容的 v3 版本），唯一职责是打印 iframe/生命周期；其余布局仍由项目代码控制。
+- `react-to-print` 使用 v3 API，唯一职责是浏览器兼容打印 iframe/生命周期；其余布局仍由 `PrintScene` 控制。正式 PDF 使用 `pdf-lib` + `fontkit`，FontAssetRegistry 按需嵌入本地 Noto Sans SC Regular 子集，其他字体使用明确 fallback 或错误提示。
 - XLSX 读取使用 `read-excel-file@9.3.10`，采用 MIT 许可证；仅在导入时动态加载，不得把解析库暴露到通用 UI 组件中。该库的兼容入口和浏览器入口均可读取 `ArrayBuffer`，默认读取首个工作表，导入服务按顺序尝试两种入口。
-- 暂不引入画布编辑器、PDF 生成库或第二套 UI 框架。
+- 不引入画布编辑器或第二套 UI 框架；PDF 生成使用已通过结构测试的 `pdf-lib` 路径，中文字体资产由 FontAssetRegistry 按需嵌入并随仓库附带许可证。
 
 ### 10.2 性能目标
 
@@ -443,7 +471,7 @@ label_project_items
 ### 12.1 自动化验证
 
 - 使用 Vitest + React Testing Library 完成纯函数与组件测试；浏览器流程由 Playwright 验证。测试工具在 NL-00 配置，不能等到功能完成后才选择。
-- 单元测试：mm 容纳校验、分页、固定首格、偏移、空名单、跨页、Unicode 名称、导入上限与 CSV/XLSX 标准化。
+- 单元测试：mm 容纳校验、分页、固定首格、origin/pitch、空名单、跨页、Unicode 名称、导入上限与 CSV/XLSX 标准化。
 - 组件测试：字段错误与最后有效预览、不可打印状态、导入列选择、清空确认、预览页数、模板恢复后姓名仍保留。
 - 浏览器测试：粘贴名单 → 配置布局 → 调用打印动作；模拟刷新恢复本地项目草稿，断言姓名不进入 URL 或网络请求，清空名单后断言本地名单为空。浏览器自动化不声称能验证系统打印对话框的最终物理输出。
 
@@ -464,9 +492,9 @@ label_project_items
 
 | 风险/待决项 | 当前处理 | 需要的后续决定 |
 | --- | --- | --- |
-| 纸张/打印机误差 | 校准偏移 + 通用模板 | 收集实物验证的标签纸型号后再承诺精确预设。 |
+| 纸张/打印机误差 | Device Geometry + 输出路径 Profile + 通用模板 | 收集实物验证的标签纸型号后再承诺精确预设。 |
 | XLSX 包体积、兼容性与恶意大文件 | `read-excel-file` 动态加载、文件/行列上限，必要时 Worker | 用真实学校导出文件测量包体积与解析耗时。 |
-| 中文字体在不同系统差异 | 浏览器系统字体栈 + 直接打印 | 若需固定输出，评估受许可约束的中文字体与 PDF 输出。 |
+| 中文字体在不同系统差异 | 浏览器预览沿用系统字体栈；正式 PDF 嵌入 OFL 1.1 的 Noto Sans SC Regular 子集 | 继续记录字体物理输出与不同浏览器的差异；楷体/衬线中文使用明确 fallback。 |
 | 云端保存 | MVP 不做 | 确认租户、认证、班级归属、保留期和删除流程。 |
 | 内容字段与输出模式 | MVP 打印批量姓名贴；班级列为可选字段 | 班级管理、拼音、学号、单人铺满、桌牌和主题模板均须按第 4.5 节逐项完成隐私、排版与打印验证后再扩展。 |
 
@@ -482,6 +510,6 @@ label_project_items
 
 - 工作流由 `LabelWorkflowStepper` 管理当前步骤；`LabelPrintingDraftProvider` 在工作台根部提供单一配置表单会话，模板面板和校准面板共享原始值、触碰状态与错误。
 - `LabelAppearance` 使用本机字体预设、标准 HEX 色值、纯色/本地图片背景、纯色外框和一至四行字段模型。字段标题控制位于内容样式区域，不再放在名单导入区域。
-- `LabelBackgroundEditor` 使用原生 Pointer Events、滑块和按钮完成会话级背景图拖动/缩放；背景图只保留当前 object URL 和受限变换参数，打印与屏幕共用 `LabelPageCanvas`。
+- `LabelBackgroundEditor` 使用原生 Pointer Events、滑块和按钮完成会话级背景图拖动/缩放；背景图只保留当前 object URL 和受限变换参数，SVG/PDF/浏览器打印共用 `PrintScene`，PDF 通过 `SceneAssetRepository` 复用图片资源。
 - 本地模板通过 `templateConfig.ts` 的版本化白名单导入、导出和保存；配置不能包含姓名、班级、文件名、背景图片或 object URL。
 - 真实打印仍依赖浏览器打印对话框的 100% 缩放和背景图形选项；实体打印机的纸张进纸与毫米偏差必须在用户环境中校准，不能由 Web 页面宣称自动验证。

@@ -6,7 +6,7 @@ import type { FieldErrors, LabelPrintFormState, LayoutField } from '../types'
 const NUMBER_FIELDS: readonly LayoutField[] = [
   'paper.widthMm', 'paper.heightMm', 'paper.marginTopMm', 'paper.marginRightMm', 'paper.marginBottomMm', 'paper.marginLeftMm',
   'layout.labelWidthMm', 'layout.labelHeightMm', 'layout.columns', 'layout.rows', 'layout.gapXmm', 'layout.gapYmm',
-  'layout.firstLabelIndex', 'layout.offsetXmm', 'layout.offsetYmm',
+  'layout.firstLabelIndex',
 ]
 
 function fieldValue(field: LayoutField, draft: ReturnType<typeof useLabelPrintingStore.getState>['draft']) {

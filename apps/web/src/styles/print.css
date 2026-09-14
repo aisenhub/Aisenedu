@@ -10,44 +10,15 @@
   page-break-after: always;
 }
 
+.print-svg-page > svg {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
 .label-page:last-child {
   break-after: auto;
   page-break-after: auto;
-}
-
-.label-cell {
-  box-sizing: border-box;
-  position: absolute;
-}
-
-.label-cell-empty {
-  border: 1px dashed var(--border);
-}
-
-.label-cell-filled {
-  box-sizing: border-box;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-}
-
-.calibration-title,
-.calibration-instructions,
-.calibration-reading {
-  display: none;
-}
-
-.calibration-crosshair {
-  display: none;
-}
-
-.calibration-cell {
-  border: 0.25mm dashed var(--border);
-  box-sizing: border-box;
-  position: absolute;
-}
-
-.calibration-cell span {
-  display: none;
 }
 
 @media print {
@@ -59,8 +30,7 @@
   }
 
   .app-shell,
-  .screen-only,
-  .print-empty-cell {
+  .screen-only {
     display: none !important;
   }
 
@@ -71,77 +41,9 @@
     top: 0 !important;
   }
 
-  .label-cell-empty {
-    border: 0 !important;
-  }
-
   .label-page {
     margin: 0 !important;
     overflow: hidden !important;
   }
 
-  .calibration-title,
-  .calibration-instructions,
-  .calibration-reading {
-    color: var(--text);
-    display: block;
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    position: absolute;
-    z-index: 2;
-  }
-
-  .calibration-title {
-    font-size: 14pt;
-    font-weight: 700;
-    left: 10mm;
-    top: 5mm;
-  }
-
-  .calibration-instructions {
-    font-size: 9pt;
-    left: 10mm;
-    top: 13mm;
-  }
-
-  .calibration-reading {
-    font-size: 9pt;
-    left: 10mm;
-    top: 20mm;
-  }
-
-  .calibration-crosshair {
-    display: block;
-    height: 12mm;
-    left: calc(50% - 6mm);
-    position: absolute;
-    top: calc(50% - 6mm);
-    width: 12mm;
-  }
-
-  .calibration-crosshair::before,
-  .calibration-crosshair::after {
-    background: var(--text);
-    content: '';
-    left: 50%;
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-  }
-
-  .calibration-crosshair::before {
-    height: 12mm;
-    width: 0.25mm;
-  }
-
-  .calibration-crosshair::after {
-    height: 0.25mm;
-    width: 12mm;
-  }
-
-  .calibration-cell span {
-    color: var(--text);
-    display: block;
-    font: 8pt ui-sans-serif, system-ui, sans-serif;
-    padding: 1mm;
-  }
 }

@@ -17,7 +17,7 @@ export function useNameLabelPrint({ canPrint, contentRef, documentTitle, paper }
     contentRef,
     documentTitle,
     onAfterPrint: () => setPrintStatus('idle'),
-    onBeforePrint: async () => { await waitForPrintableImages(contentRef.current); setPrintStatus('printing') },
+    onBeforePrint: async () => { await waitForPrintableImages(contentRef.current); setPrintStatus('browser-printing') },
     onPrintError: (_location, error) => setPrintStatus('error', error instanceof Error ? '打印未能启动，请检查浏览器打印权限后重试。' : '打印未能启动，请重试。'),
     pageStyle: createPrintPageStyle(paper),
     printIframeProps: { referrerPolicy: 'no-referrer' },
@@ -28,7 +28,7 @@ export function useNameLabelPrint({ canPrint, contentRef, documentTitle, paper }
       setPrintStatus('error', '请先导入姓名并修正排版参数后再打印。')
       return
     }
-    setPrintStatus('printing')
+    setPrintStatus('browser-printing')
     print()
   }, [canPrint, print, setPrintStatus])
 

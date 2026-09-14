@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { cleanNamesFromText } from './importNames'
-import { createPageLayouts } from '../utils/layout'
+import { createPageLayouts } from '../layout/createPageLayouts'
 import { createDefaultDraft } from '../utils/templatePresets'
+import { physicalTemplateFromDraft } from '../domain/physicalTemplate'
 
 describe('姓名贴大名单性能基线', () => {
   it('可以处理 10000 条合成名单并完成分页', () => {
@@ -9,7 +10,7 @@ describe('姓名贴大名单性能基线', () => {
     const start = performance.now()
     const cleaned = cleanNamesFromText(input)
     const draft = createDefaultDraft()
-    const pages = createPageLayouts(cleaned.names, draft.paper, draft.layout)
+    const pages = createPageLayouts({ names: cleaned.names, firstLabelIndex: draft.layout.firstLabelIndex }, physicalTemplateFromDraft(draft))
     const elapsed = performance.now() - start
     expect(cleaned.names).toHaveLength(10_000)
     expect(pages.length).toBeGreaterThan(0)
