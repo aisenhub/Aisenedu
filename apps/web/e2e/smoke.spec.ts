@@ -103,6 +103,34 @@ test('姓名贴工作台在窄屏没有无意横向滚动', async ({ page }) => 
   expect(documentOverflow).toBe(false)
 })
 
+test('兼容模式设备测试页在打印媒介中保持纸张尺寸和测试内容', async ({ page }) => {
+  await page.goto('/tools/name-labels')
+  await page.getByLabel('粘贴或输入名单').fill('测试内容')
+  await page.getByRole('button', { name: '使用这份名单' }).click()
+  await page.getByRole('button', { name: /^打印校准：/ }).click()
+  await page.getByRole('button', { name: '校准与输出说明' }).click()
+  await page.getByTestId('printable-calibration-document').evaluate((root) => {
+    const clone = root.cloneNode(true) as HTMLElement
+    clone.id = 'print-test-document'
+    document.body.appendChild(clone)
+  })
+  await page.emulateMedia({ media: 'print' })
+  const metrics = await page.locator('#print-test-document').evaluate((root) => {
+    const pageElement = root.querySelector<HTMLElement>('.print-svg-page')
+    const svg = root.querySelector('svg')
+    return {
+      width: pageElement?.getBoundingClientRect().width ?? 0,
+      height: pageElement?.getBoundingClientRect().height ?? 0,
+      textCount: svg?.querySelectorAll('text').length ?? 0,
+      rectCount: svg?.querySelectorAll('rect').length ?? 0,
+    }
+  })
+  expect(metrics.width).toBeCloseTo(210 * 96 / 25.4, 0)
+  expect(metrics.height).toBeCloseTo(297 * 96 / 25.4, 0)
+  expect(metrics.textCount).toBeGreaterThan(10)
+  expect(metrics.rectCount).toBeGreaterThan(10)
+})
+
 test('背景图编辑在移动端提供按钮替代并同步到打印文档', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/tools/name-labels')

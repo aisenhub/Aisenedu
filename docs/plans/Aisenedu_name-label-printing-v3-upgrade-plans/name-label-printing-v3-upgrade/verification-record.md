@@ -245,6 +245,15 @@
 - 覆盖范围：`unit / component / e2e / responsive / build / lint / compatibility`
 - 此结果在后续相关代码变化后是否仍有效：已由本轮 GitHub merge commit `d174f139c3c9b3a4894c8c56dc63754a4ede314f` 关联复核。
 
+#### 2026-09-14 — Gate 1 兼容模式 — 设备几何测试页打印预览
+
+- 复现：在“打印校准”中展开“校准与输出说明”，点击“兼容模式：浏览器测试页”，检查浏览器打印媒体下的测试页内容和纸张尺寸。
+- 根因：兼容打印文档中的 `.print-svg-page > svg` 使用 `width: 100%` 和 `height: 100%`，但 `react-to-print` 克隆到独立打印 iframe 后，页容器没有明确的物理宽高，百分比尺寸解析为 `0 × 0`，导致测试页 marker、尺长和方格不可见，只留下异常的零散文本。
+- 修复：浏览器打印标签页和 Gate 1 测试页都为每个 `.print-svg-page` 注入对应 `PrintScene` 页面宽高（mm）；SVG 继续填满同尺寸容器，确保打印 iframe 中按纸张真实尺寸布局。
+- 回归结果：模拟 `react-to-print` 克隆到独立 body 并切换 `print` media 后，A4 页面布局为约 `793.7 × 1122.5 CSS px`，包含 `14` 个文本节点和 `26` 个矩形节点；7 条 Playwright E2E 全部通过。
+- 物理边界：本次验证覆盖浏览器打印预览 DOM 和 CSS 尺寸，未执行实体打印；实际打印仍需用户设备、驱动和目标纸材校准。
+- 此结果在后续相关代码变化后是否仍有效：待本轮 GitHub push/merge 完成后以最终 commit SHA 关联复核。
+
 #### 2026-09-14 — Phase 5/6 — 旧路径退出、Profile 选择与网络证据
 
 - 被验证代码：working tree `modified`；`PhysicalTemplate` layout 主入口、Profile picker、旧 renderer 清理、`smoke.spec.ts`
