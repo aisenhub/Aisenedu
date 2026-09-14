@@ -57,4 +57,12 @@ describe('姓名导入与清洗', () => {
     const result = cleanNamesFromTable({ columns: ['班级', '姓名'], rows: [{ sourceRow: 2, values: [' 一班 ', ' 陈安然 '] }] }, 1, 0)
     expect(result.names[0]).toMatchObject({ className: '一班', value: '陈安然', sourceRow: 2 })
   })
+
+  it('多列内容默认保留原值，不自动添加字段标题', () => {
+    const result = cleanNamesFromText('A-01\t靠窗', ['编号', '备注'])
+    expect(result.names[0]?.fields).toEqual([
+      { label: '编号', value: 'A-01', showTitle: false },
+      { label: '备注', value: '靠窗', showTitle: false },
+    ])
+  })
 })

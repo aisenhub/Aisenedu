@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Button } from '../../../components/ui/button'
 import { asMm, type LabelAppearance, type LayoutCell, type PageLayout } from '../types'
+import { getLabelParts } from '../scene/buildPrintScene'
 import { SvgPrintPreviewPage } from './SvgPrintPreviewPage'
 
 type PrintPreviewProps = Readonly<{
@@ -13,8 +14,7 @@ type PrintPreviewProps = Readonly<{
 
 function getCellContent(cell: LayoutCell) {
   if (!cell.student) return '空白标签'
-  if (cell.student.fields?.length) return cell.student.fields.map((field) => field.value ? `${field.label}：${field.value}` : field.label).join(' · ')
-  return [cell.student.className ? `班级：${cell.student.className}` : '', cell.student.value ? `姓名：${cell.student.value}` : ''].filter(Boolean).join(' · ')
+  return getLabelParts(cell.student).join(' · ')
 }
 
 function createDetailPage(page: PageLayout, cell: LayoutCell): PageLayout {

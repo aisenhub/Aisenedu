@@ -11,7 +11,7 @@ function applyFieldTitleSettings(result: NameCleaningResult, showTitles: readonl
     ...result,
     names: result.names.map((name) => ({
       ...name,
-      fields: name.fields?.map((field, index) => ({ ...field, showTitle: showTitles[index] ?? true })),
+      fields: name.fields?.map((field, index) => ({ ...field, showTitle: showTitles[index] ?? false })),
     })),
   }
 }

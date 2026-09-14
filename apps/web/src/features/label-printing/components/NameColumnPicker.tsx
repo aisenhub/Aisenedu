@@ -44,8 +44,8 @@ function TitleToggle({ rowIndex, showTitle, onChange }: Readonly<{ rowIndex: num
 function getInitialColumns(columns: readonly string[], selectedColumns: readonly number[] = [], showTitles: readonly boolean[] = []): SelectedColumn[] {
   const validSelectedColumns = selectedColumns.filter((index) => index >= 0 && index < columns.length)
   const initialIndexes = validSelectedColumns.length > 0 ? validSelectedColumns : columns.slice(0, 4).map((_, index) => index)
-  const initialColumns = initialIndexes.map((columnIndex, index) => ({ columnIndex: String(columnIndex), showTitle: showTitles[index] ?? true }))
-  return initialColumns.length > 0 ? initialColumns : [{ columnIndex: '', showTitle: true }]
+  const initialColumns = initialIndexes.map((columnIndex, index) => ({ columnIndex: String(columnIndex), showTitle: showTitles[index] ?? false }))
+  return initialColumns.length > 0 ? initialColumns : [{ columnIndex: '', showTitle: false }]
 }
 
 export function NameColumnPicker({ confirmLabel = '确认字段选择', initialSelectedColumns, initialShowTitles, onCancel, onSelect, table }: NameColumnPickerProps) {
@@ -103,7 +103,7 @@ export function NameColumnPicker({ confirmLabel = '确认字段选择', initialS
             </div>
           </div>
         ))}
-        <Button aria-label="添加字段行" disabled={!canAddColumn} onClick={() => setSelectedColumns((current) => [...current, { columnIndex: '', showTitle: true }])} size="sm" type="button" variant="ghost"><Plus aria-hidden="true" className="size-4" />添加字段行</Button>
+        <Button aria-label="添加字段行" disabled={!canAddColumn} onClick={() => setSelectedColumns((current) => [...current, { columnIndex: '', showTitle: false }])} size="sm" type="button" variant="ghost"><Plus aria-hidden="true" className="size-4" />添加字段行</Button>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3">

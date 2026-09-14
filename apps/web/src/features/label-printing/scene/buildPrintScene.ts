@@ -5,14 +5,13 @@ import { createCanvasTextMeasurer } from '../text/measureText'
 import { resolveTextLayout } from '../text/resolveTextLayout'
 import type { GroupNode, PrintScene, SceneNode, TextLayout, TextMeasurer } from './types'
 
-function getLabelParts(student: StudentName | undefined, appearance: LabelAppearance) {
+export function getLabelParts(student: StudentName | undefined) {
   if (!student) return []
   if (student.fields?.length) return student.fields.map((field) => {
-    const showTitle = field.showTitle ?? true
+    const showTitle = field.showTitle === true
     return field.value !== '' ? `${showTitle ? `${field.label}：` : ''}${field.value}` : showTitle ? `${field.label}：` : ''
-  })
-  if (student.className) return [student.value ? `${appearance.showNameTitle ? '姓名：' : ''}${student.value}` : appearance.showNameTitle ? '姓名：' : '', `${appearance.showClassTitle ? '班级：' : ''}${student.className}`]
-  return student.value ? [`${appearance.showNameTitle ? '姓名：' : ''}${student.value}`] : []
+  }).filter((value): value is string => Boolean(value))
+  return [student.value, student.className].filter((value): value is string => Boolean(value))
 }
 
 function shiftTextLayout(layout: TextLayout, xMm: Mm, yMm: Mm): TextLayout {
@@ -31,7 +30,7 @@ function createCellScene(cell: LayoutCell, appearance: LabelAppearance, fontRegi
   const contentY = cell.yMm + outerWidth + innerGap
   const contentWidth = cell.widthMm - (outerWidth + innerGap) * 2
   const contentHeight = cell.heightMm - (outerWidth + innerGap) * 2
-  const textLayout = resolveTextLayout({ appearance, heightMm: cell.heightMm, widthMm: cell.widthMm, lines: getLabelParts(cell.student, appearance), innerBorderGapMm: innerGap, innerBorderWidthMm: innerWidth, outerBorderWidthMm: asMm(outerWidth), fontRegistry, measurer })
+  const textLayout = resolveTextLayout({ appearance, heightMm: cell.heightMm, widthMm: cell.widthMm, lines: getLabelParts(cell.student), innerBorderGapMm: innerGap, innerBorderWidthMm: innerWidth, outerBorderWidthMm: asMm(outerWidth), fontRegistry, measurer })
   const children: SceneNode[] = [
     { kind: 'rect', xMm: cell.xMm, yMm: cell.yMm, widthMm: cell.widthMm, heightMm: cell.heightMm, radiusMm: radius, fill: appearance.outerBorderVisible ? appearance.borderColor : appearance.backgroundColor },
     { kind: 'rect', xMm: asMm(cell.xMm + outerWidth), yMm: asMm(cell.yMm + outerWidth), widthMm: asMm(cell.widthMm - outerWidth * 2), heightMm: asMm(cell.heightMm - outerWidth * 2), radiusMm: asMm(innerRadius), fill: appearance.backgroundColor },

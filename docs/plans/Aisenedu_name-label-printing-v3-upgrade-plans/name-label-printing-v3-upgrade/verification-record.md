@@ -202,7 +202,7 @@
 - 复现：输入 `其他文字` 后检查首个 SVG 文本节点，并执行正式 PDF 下载；同时检查页面横向滚动、浏览器错误和 Noto 字体请求。
 - 根因：Scene/SVG 的 `viewBox` 单位是 `mm`，但 renderer 直接输出了以 `pt` 为单位的 `14pt` 字号；在 SVG 中它被按 CSS 像素解释，导致文字测量约 `130.65mm`，即使调到最小字号也会明显超出 `40mm` 标签。输入内容本身实际已存在，之前主要被过大文本裁剪，另外详情预览的选择标识不应依赖当前页的 cell id。
 - 修复：SVG 边界将 `fontSizePt` 统一换算为 `mm` 用户单位；详情预览使用稳定的独立选中标识；E2E 增加输入文本和字号回归断言。CJK PDF 改为 `subset: false`，避免 pdf-lib/fontkit 子集 PDF 在部分移动阅读器中结构可读但字形缺失；ASCII 仍使用标准字体。
-- 结果：修复后文本为 `姓名：其他文字`，字号属性为 `4.9389`，`getBBox()` 宽 `35.321mm`，小于标签宽 `40mm`；生成 PDF 为 `7,339,833 bytes`、1 页，可被 `PDFDocument.load()` 重新读取，确实请求 Noto 字体且无页面错误/横向溢出。
+- 结果：修复后文本为 `其他文字`，字号属性为 `4.9389`，`getBBox()` 宽 `35.321mm`，小于标签宽 `40mm`；生成 PDF 为 `7,339,833 bytes`、1 页，可被 `PDFDocument.load()` 重新读取，确实请求 Noto 字体且无页面错误/横向溢出。
 - 资源复用：跨 3 页共享同一 PNG 背景的 PDF 测试中，资源 `loadBytes` 调用次数为 `1`，确认图片只解码/嵌入一次。
 - 命令/操作：
   ```bash
@@ -232,7 +232,18 @@
 - 结论：三项用户报告缺陷均有代码回归保护；中文 PDF 使用完整字体会使单页文件约 `7.34MB`，这是移动阅读器兼容性所需的明确取舍，且字体仍只在用户点击正式导出后加载。
 - 物理边界：未执行实体打印；仍缺第二台普通打印机、目标标签纸和用户授权的耗材测试，因此不宣称物理验收完成。
 - 覆盖范围：`unit / e2e / responsive / build / lint / privacy / performance / compatibility`
-- 此结果在后续相关代码变化后是否仍有效：已由下方 GitHub merge commit `3ef18b725f2468879240778e8954d29a9a9c279e` 关联复核。
+- 此结果中的移动端字号换算、详情预览选择、CJK 完整字体和图片资源复用结论仍有效；默认内容格式已由下方“通用内容回归”复核。
+
+#### 2026-09-14 — 通用内容回归 — 默认原样打印与标题显式开启
+
+- 被验证代码：`buildPrintScene.ts`、`importNames.ts`、`useLabelImport.ts`、`NameColumnPicker.tsx`、`SvgPrintPreviewPage.tsx`、`PrintPreview.tsx` 与相关测试
+- 行为：纯文本输入、Tab 多列输入和 CSV/XLSX 字段默认只输出用户提供的值，不自动添加“姓名：”“班级：”或字段名；用户手动打开标题开关后，标题仍按开关输出。
+- 结果：`其他文字` 预览和 PDF 场景均为 `其他文字`；CSV 默认字段为原值，显式打开后才显示 `姓名：李明远`、`班级：三年级`。
+- 命令/操作：针对性 Vitest、完整 Vitest、生产 build、Lint、Playwright E2E 与 Impeccable detector。
+- 退出码：全部为 `0`
+- 结果摘要：完整 Vitest `19 passed / 65 passed`；V8 statements/lines `66.24%`、branches `74.54%`、functions `61.62%`；生产构建 `1975 modules transformed`；Lint 通过；Playwright E2E `6 passed`；Impeccable detector 返回 `[]`。
+- 覆盖范围：`unit / component / e2e / responsive / build / lint / compatibility`
+- 此结果在后续相关代码变化后是否仍有效：待本轮 GitHub push/merge 完成后以最终 commit SHA 关联复核。
 
 #### 2026-09-14 — Phase 5/6 — 旧路径退出、Profile 选择与网络证据
 
