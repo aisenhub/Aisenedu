@@ -8,7 +8,7 @@
 - 本次范围：软件主链、中文 PDF 字体资产、移动端预览/输入回归、校准 Profile UI、旧 renderer/offset 清理和自动化验证已完成；真实打印机重复性与物理验收仍未完成。
 - GitHub 仓库：`aisenhub/Aisenedu`（执行时核对 remote）。
 - 本地仓库绝对路径：`E:\Projects\Aisenedu`。
-- 实施分支：`codex/name-label-printing-v2-upgrade`；已合并分支：`main`。
+- 实施分支：`codex/name-label-printing-v2-upgrade`；本轮缺陷修复分支：`codex/name-label-printing-mobile-pdf-fixes`；已合并分支：`main`。
 - 起始 commit：`2198471feead3e3ec2891c0ebf001b4ae1d48ca0`。
 - 研究期远端 main 参考 SHA：`2198471feead3e3ec2891c0ebf001b4ae1d48ca0`（仅参考，不能替代执行时读取）。
 - 初始 `git status --short`：`?? docs/plans/`；该计划目录为用户已有文件，未删除或覆盖。
@@ -232,7 +232,7 @@
 - 结论：三项用户报告缺陷均有代码回归保护；中文 PDF 使用完整字体会使单页文件约 `7.34MB`，这是移动阅读器兼容性所需的明确取舍，且字体仍只在用户点击正式导出后加载。
 - 物理边界：未执行实体打印；仍缺第二台普通打印机、目标标签纸和用户授权的耗材测试，因此不宣称物理验收完成。
 - 覆盖范围：`unit / e2e / responsive / build / lint / privacy / performance / compatibility`
-- 此结果在后续相关代码变化后是否仍有效：待 GitHub push/merge 完成后以最终 commit SHA 关联复核。
+- 此结果在后续相关代码变化后是否仍有效：已由下方 GitHub merge commit `3ef18b725f2468879240778e8954d29a9a9c279e` 关联复核。
 
 #### 2026-09-14 — Phase 5/6 — 旧路径退出、Profile 选择与网络证据
 
@@ -377,6 +377,19 @@
 - Remote `main` contains SHA：已验证；远端 `main` 指向 `20059ecadabbf663474c7286f93e95d908b7386c`
 - GitHub main link：[merge commit](https://github.com/aisenhub/Aisenedu/commit/20059ecadabbf663474c7286f93e95d908b7386c)，[main](https://github.com/aisenhub/Aisenedu/tree/main)
 - Verification-record update commit：`c1b8fd42c8ea026a4db0832bb2d135e4b5702971`，已在 `main` 上提交并成功推送。
+- Push failure/retry：无。
+
+### 2026-09-14 — 移动端预览与中文 PDF 缺陷修复
+
+- Branch：`codex/name-label-printing-mobile-pdf-fixes` → `main`
+- Code commit SHA：`f2c6700398fa774520679d7cc6f36f9f7dfc4d90`
+- Commit message：`fix: correct mobile label preview and CJK PDF output`
+- Push command/result：`git push -u origin codex/name-label-printing-mobile-pdf-fixes` 成功
+- GitHub commit/branch link：[fix commit](https://github.com/aisenhub/Aisenedu/commit/f2c6700398fa774520679d7cc6f36f9f7dfc4d90)，[fix branch](https://github.com/aisenhub/Aisenedu/tree/codex/name-label-printing-mobile-pdf-fixes)
+- Merge commit SHA：`3ef18b725f2468879240778e8954d29a9a9c279e`
+- Merge/push command/result：`git merge --no-ff codex/name-label-printing-mobile-pdf-fixes` 成功；`git push origin main` 成功
+- Remote `main` contains SHA：已验证；远端 `main` 指向 `3ef18b725f2468879240778e8954d29a9a9c279e`
+- GitHub main link：[merge commit](https://github.com/aisenhub/Aisenedu/commit/3ef18b725f2468879240778e8954d29a9a9c279e)，[main](https://github.com/aisenhub/Aisenedu/tree/main)
 - Push failure/retry：无。
 
 ## 8. 交接信息
